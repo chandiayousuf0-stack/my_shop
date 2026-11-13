@@ -102,12 +102,12 @@ khata_ws = sheet.worksheet("Khata")
 all_stock_rows = stock_ws.get_all_values()
 my_stock = []
 for idx, row in enumerate(all_stock_rows[1:], start=2):
-    if len(row) >= 4 and row.strip() == current_user:
+    if len(row) >= 4 and row[0].strip() == current_user:
         my_stock.append({
             "row_idx": idx,
-            "item_name": row.strip(),
-            "price": float(row),
-            "quantity": int(float(row))
+            "item_name": row[1].strip(),
+            "price": float(row[2]),
+            "quantity": int(float(row[3]))
         })
 
 if menu == "1. بلنگ اور سیلز (WhatsApp & Print)":
@@ -240,12 +240,12 @@ elif menu == "3. ادھار کھاتہ سسٹم":
     all_khata_rows = khata_ws.get_all_values()
     my_khata = []
     for idx, row in enumerate(all_khata_rows[1:], start=2):
-        if len(row) >= 4 and row.strip() == current_user:
+        if len(row) >= 4 and row[0].strip() == current_user:
             my_khata.append({
                 "row_idx": idx,
-                "customer_name": row.strip(),
-                "phone": row.strip(),
-                "balance": float(row)
+                "customer_name": row[1].strip(),
+                "phone": row[2].strip(),
+                "balance": float(row[3])
             })
 
     try:
@@ -330,14 +330,14 @@ elif menu == "3. ادھار کھاتہ سسٹم":
             total_taken = 0.0
             total_paid = 0.0
             for r in all_hist_rows[1:]:
-                if len(r) >= 5 and r.strip() == current_user and r.strip() == view_cust_name:
-                    amt = float(r)
-                    t_type = r.strip()
+                if len(r) >= 5 and r[0].strip() == current_user and r[1].strip() == view_cust_name:
+                    amt = float(r[3])
+                    t_type = r[2].strip()
                     if "+" in t_type:
                         total_taken += amt
                     else:
                         total_paid += amt
-                    cust_history.append({"تاریخ و وقت": r, "تفصیل": t_type, "رقم (روپے)": amt})
+                    cust_history.append({"تاریخ و وقت": r[4], "تفصیل": t_type, "رقم (روپے)": amt})
             
             c1, c2, c3 = st.columns(3)
             c1.metric("کل ادھار لیا", f"{total_taken} روپے")
