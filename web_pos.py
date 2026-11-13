@@ -101,12 +101,12 @@ khata_ws = sheet.worksheet("Khata")
 all_stock_rows = stock_ws.get_all_values()
 my_stock = []
 for idx, row in enumerate(all_stock_rows[1:], start=2):
-    if len(row) >= 4 and row.strip() == current_user:
+    if len(row) >= 4 and row[0].strip() == current_user:
         my_stock.append({
             "row_idx": idx,
-            "item_name": row,
-            "price": float(row),
-            "quantity": int(float(row))
+            "item_name": row[1],
+            "price": float(row[2]),
+            "quantity": int(float(row[3]))
         })
 if menu == "1. بلنگ اور سیلز (WhatsApp & Print)":
     st.header("🧾 نیا بل بنائیں")
@@ -237,12 +237,12 @@ elif menu == "3. ادھار کھاتہ سسٹم":
     all_khata_rows = khata_ws.get_all_values()
     my_khata = []
     for idx, row in enumerate(all_khata_rows[1:], start=2):
-        if len(row) >= 4 and row.strip() == current_user:
+        if len(row) >= 4 and row[0].strip() == current_user:
             my_khata.append({
                 "row_idx": idx,
-                "customer_name": row,
-                "phone": row,
-                "balance": float(row)
+                "customer_name": row[1],
+                "phone": row[2],
+                "balance": float(row[3])
             })
 
     tab1, tab2 = st.tabs(["➕ نیا ادھار / وصولی", "📋 کھاتہ لسٹ اور واٹس ایپ تقاضا"])
@@ -281,7 +281,7 @@ elif menu == "3. ادھار کھاتہ سسٹم":
             st.divider()
             
             for k in my_khata:
-                col1, col2 = st.columns()
+                col1, col2 = st.columns(2)
                 with col1:
                     st.write(f"**👤 {k['customer_name']}** | 📞 {k['phone']}")
                     st.write(f"بقایا رقم: **{k['balance']} روپے**")
