@@ -320,3 +320,141 @@ elif menu == "4. رائے اور اپ ڈیٹ کی درخواست (Feedback)":
                     st.error("فیڈبیک بھیجنے میں مسئلہ آیا۔ یقین کر لیں کہ گوگل شیٹ میں 'Feedback' ٹیب موجود ہے۔")
             else:
                 st.warning("براہ کرم خالی پیغام نہ بھیجیں۔")
+# === حصہ 3: ادھار کھاتہ سسٹم (مکمل لیجر اور فہرست کے ساتھ) ===
+elif menu == "3. ادھار کھاتہ سسٹم":
+    st.header("📒 اسمارٹ ادھار کھاتہ سسٹم")
+    
+    all_khata_rows = khata_ws.get_all_values()
+    my_khata = []
+    for idx, row in enumerate(all_khata_rows[1:], start=2):
+        if len(row) >= 4 and row[0].strip() == current_user:
+            my_khata.append({
+                "row_idx": idx,
+                "customer_name": row[1].strip(),
+                "phone": row[2].strip(),
+                "balance": float(row[3])
+            })
+
+    try:
+        hist_ws = sheet.worksheet("Khata_History")
+        all_hist_rows = hist_ws.get_all_values()
+    except:
+        hist_ws = None
+        all_hist_rows = []
+
+    tab1, tab2, tab3 = st.tabs([
+        "🔄 ادھار / وصولی (فہرست سے چنیں)",
+        "➕ نیا گاہک رجسٹر کریں",
+        "📜 گاہک کا مکمل کھاتہ اور بقایا"
+    ])
+
+    # ٹیب 1: پہلے سے موجود گاہک کے لیے کلک کر کے ادھار ڈالنا یا وصول کرنا
+    with tab1:
+        if not my_khata:
+            st.info("ابھی کوئی گاہک رجسٹرڈ نہیں ہے۔ پہلے 'نیا گاہک رجسٹر کریں' میں جا کر گاہک کا نام اور نمبر شامل کریں۔")
+        else:
+            st.subheader("پرانے گاہک کا لین دین درج کریں")
+            cust_names = [k["customer_name"] for k in my_khata]
+            selected_c_name = st.selectbox("گاہک منتخب کریں (کلک کریں):", cust_names)
+            selected_cust = next(k for k in my_khata if k["customer_name"] == selected_c_name)
+            
+            st.info(f"👤 گاہک: **{selected_cust['customer_name']}** | 📞 فون: **{selected_cust['phone']}** | 💰 موجودہ بقایا: **{selected_cust['balance']} روپے**")
+            
+            with st.form("existing_khata_form"):
+                trans_type = st.radio("عمل منتخب کریں:", ["مزید ادھار دیں (+)", "رقم وصول کریں (-)"])
+                trans_amount = st.number_input("رقم درج کریں (روپے):", min_value=1.0, step=100.0)
+                trans_btn = st.form_submit_button("💾 کھاتہ اپ ڈیٹ کریں")
+                
+                if trans_btn:
+                    old_bal = selected_cust["balance"]
+                    if trans_type == "مزید ادھار دیں (+)":
+                        new_bal = old_bal + trans_amount
+                        log_type = "ادھار لیا (+)"
+                    else:
+                        new_bal = max(0.0, old_bal - trans_amount)
+                        log_type = "رقم جمع کروائی (-)"
+                        
+                    khata_ws.update_cell(selected_cust["row_idx"], 4, new_bal)
+                    if hist_ws:
+                        now_dt = datetime.now().strftime("%Y-%m-%d %H:%M")
+                        hist_ws.append_row([current_user, selected_c_name, log_type, trans_amount, now_dt])
+                    st.success(f"کامیابی! {selected_c_name} کا نیا بقایا {new_bal} روپے ہو گیا ہے۔")
+                    st.rerun()
+
+    # ٹیب 2: نیا گاہک صرف ایک بار رجسٹر کرنا
+    with tab2:
+        st.subheader("نئے گاہک کا کھاتہ کھولیں")
+        with st.form("new_cust_form"):
+            new_c_name = st.text_input("نئے گاہک کا نام (لازمی):")
+            new_c_phone = st.text_input("واٹس ایپ فون نمبر (لازمی، مثلاً 03001234567):")
+            first_udhar = st.number_input("ابتدائی ادھار رقم (اگر کوئی ہے):", min_value=0.0, step=100.0)
+            add_cust_btn = st.form_submit_button("✅ نیا گاہک محفوظ کریں")
+            
+            if add_cust_btn:
+                if new_c_name.strip() and new_c_phone.strip():
+                    already_exists = any(k["customer_name"].lower() == new_c_name.strip().lower() for k in my_khata)
+                    if already_exists:
+                        st.error("یہ نام پہلے سے فہرست میں موجود ہے! پہلے ٹیب میں جا کر اس کا نام منتخب کریں۔")
+                    else:
+                        khata_ws.append_row([current_user, new_c_name.strip(), new_c_phone.strip(), first_udhar])
+                        if hist_ws and first_udhar > 0:
+                            now_dt = datetime.now().strftime("%Y-%m-%d %H:%M")
+                            hist_ws.append_row([current_user, new_c_name.strip(), "ادھار لیا (+)", first_udhar, now_dt])
+                        st.success(f"گاہک '{new_c_name}' کامیابی سے رجسٹر ہو گیا!")
+                        st.rerun()
+                else:
+                    st.error("گاہک کا نام اور فون نمبر دونوں درج کرنا لازمی ہیں۔")
+
+    # ٹیب 3: ہر گاہک کی مکمل تفصیل، تاریخ وار کھاتہ اور واٹس ایپ بل
+    with tab3:
+        if not my_khata:
+            st.info("کوئی کھاتہ موجود نہیں ہے۔")
+        else:
+            total_market_udhar = sum(k["balance"] for k in my_khata)
+            st.metric("مارکیٹ میں کل بقایا ادھار", f"{total_market_udhar} روپے")
+            st.divider()
+            
+            view_cust_name = st.selectbox("تفصیلی کھاتہ دیکھنے کے لیے گاہک منتخب کریں:", [k["customer_name"] for k in my_khata], key="view_ledger")
+            v_cust = next(k for k in my_khata if k["customer_name"] == view_cust_name)
+            
+            # اس گاہک کی ہسٹری نکالنا
+            cust_history = []
+            total_taken = 0.0
+            total_paid = 0.0
+            for r in all_hist_rows[1:]:
+                if len(r) >= 5 and r[0].strip() == current_user and r[1].strip() == view_cust_name:
+                    amt = float(r[3])
+                    t_type = r[2].strip()
+                    if "+" in t_type:
+                        total_taken += amt
+                    else:
+                        total_paid += amt
+                    cust_history.append({"تاریخ": r[4], "تفصیل": t_type, "رقم (روپے)": amt})
+            
+            c1, c2, c3 = st.columns(3)
+            c1.metric("کل ادھار لیا", f"{total_taken} روپے")
+            c2.metric("کل جمع کروایا", f"{total_paid} روپے")
+            c3.metric("موجودہ بقایا", f"{v_cust['balance']} روپے")
+            
+            if cust_history:
+                st.write("**📜 لین دین کی مکمل فہرست:**")
+                st.table(cust_history)
+            else:
+                st.caption("ابھی اس گاہک کی پرانی تفصیل درج نہیں ہے۔")
+                
+            # واٹس ایپ پر مکمل کھاتہ اور بقایا بھیجنا
+            clean_p = str(v_cust['phone']).strip().replace("-", "").replace(" ", "")
+            if clean_p.startswith("03"):
+                clean_p = "92" + clean_p[1:]
+                
+            ledger_msg = (
+                f"السلام علیکم {v_cust['customer_name']} صاحب،\n"
+                f"*{shop_title}* کی طرف سے آپ کے کھاتے کی تفصیل:\n"
+                f"• کل ادھار: {total_taken} روپے\n"
+                f"• کل جمع شدہ: {total_paid} روپے\n"
+                f"• *موجودہ بقایا رقم: {v_cust['balance']} روپے*\n"
+                f"براہ کرم جلد ادائیگی کر دیں۔ شکریہ!"
+            )
+            wa_url = f"https://wa.me{clean_p}?text={urllib.parse.quote(ledger_msg)}"
+            st.link_button("📲 گاہک کو مکمل کھاتہ واٹس ایپ کریں", wa_url)
+
