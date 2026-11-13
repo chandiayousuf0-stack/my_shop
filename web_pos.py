@@ -3,6 +3,7 @@ import gspread
 import urllib.parse
 import json
 import os
+from datetime import datetime
 
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1gHKID_B6t6A9WBP6WHaBt8QldJUUk76Urh8IWgIlThk/edit?gid=298455774#gid=298455774"
 
@@ -28,6 +29,7 @@ if "logged_in" not in st.session_state:
     st.session_state.username = ""
     st.session_state.shop_name = ""
 
+# --- 1. لاگ ان اسکرین (رابطہ نمبر کے ساتھ) ---
 if not st.session_state.logged_in:
     st.title("🔐 دکان مینجمنٹ سسٹم - لاگ ان")
     st.info("صرف رجسٹرڈ دکاندار اپنا یوزر نیم اور پاس ورڈ درج کریں۔")
@@ -51,15 +53,23 @@ if not st.session_state.logged_in:
                             user_found = True
                             st.rerun()
                         else:
-                            st.error("آپ کا اکاؤنٹ فی الحال معطل (Inactive) ہے۔")
+                            st.error("آپ کا اکاؤنٹ فی الحال معطل (Inactive) ہے۔ ایڈمن سے رابطہ کریں۔")
                             user_found = True
                             break
                 if not user_found:
                     st.error("غلط یوزر نیم یا پاس ورڈ!")
             else:
                 st.warning("براہ کرم یوزر نیم اور پاس ورڈ دونوں لکھیں۔")
+
+    st.divider()
+    st.subheader("📞 نیا اکاؤنٹ / لاگ ان بنوانے کے لیے رابطہ کریں")
+    st.write("اپنی دکان کا ذاتی اکاؤنٹ حاصل کرنے کے لیے ایڈمن سے واٹس ایپ یا کال پر رابطہ کریں:")
+    st.markdown("### 📱 **0320-2609659**")
+    admin_wa = f"https://wa.me{urllib.parse.quote('السلام علیکم! مجھے اپنی دکان کے لیے POS سافٹ ویئر کا لاگ ان اکاؤنٹ بنوانا ہے۔')}"
+    st.link_button("🟢 ایڈمن کو واٹس ایپ میسج کریں", admin_wa)
     st.stop()
 
+# --- 2. مین ڈیش بورڈ ---
 current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
@@ -68,7 +78,12 @@ st.caption(f"لاگ ان آئی ڈی: {current_user}")
 
 menu = st.sidebar.radio(
     "مینیو منتخب کریں:",
-    ["1. بلنگ اور سیلز (WhatsApp)", "2. اسٹاک مینجمنٹ", "3. ادھار کھاتہ سسٹم"]
+    [
+        "1. بلنگ اور سیلز (WhatsApp & Print)",
+        "2. اسٹاک مینجمنٹ",
+        "3. ادھار کھاتہ سسٹم",
+        "4. رائے اور اپ ڈیٹ کی درخواست (Feedback)"
+    ]
 )
 
 if st.sidebar.button("🚪 لاگ آؤٹ کریں"):
@@ -91,7 +106,8 @@ for idx, row in enumerate(all_stock_rows[1:], start=2):
             "price": float(row[2]),
             "quantity": int(float(row[3]))
         })
-if menu == "1. بلنگ اور سیلز (WhatsApp)":
+# === حصہ 1: بلنگ سسٹم (صرف بل پرنٹ اور واٹس ایپ کے ساتھ) ===
+if menu == "1. بلنگ اور سیلز (WhatsApp & Print)":
     st.header("🧾 نیا بل بنائیں")
     
     if not my_stock:
@@ -129,8 +145,10 @@ if menu == "1. بلنگ اور سیلز (WhatsApp)":
             
             bill_lines = [f"🏪 *{shop_title}*", "━━━━━━━━━━━━━━"]
             grand_total = 0
+            html_rows = ""
             for item in st.session_state.cart:
                 bill_lines.append(f"• {item['name']} ({item['qty']} x {item['price']}) = {item['total']} روپے")
+                html_rows += f"<tr><td>{item['name']}</td><td>{item['qty']}</td><td>{item['price']}</td><td>{item['total']}</td></tr>"
                 grand_total += item['total']
             bill_lines.append("━━━━━━━━━━━━━━")
             bill_lines.append(f"💰 *کل رقم: {grand_total} روپے*")
@@ -155,15 +173,32 @@ if menu == "1. بلنگ اور سیلز (WhatsApp)":
                 encoded_msg = urllib.parse.quote(bill_text)
                 st.link_button("🟢 واٹس ایپ کھولیں (فہرست سے گاہک چنیں)", f"https://wa.me?text={encoded_msg}")
 
-            st.components.v1.html(
-                '<button onclick="window.parent.print()" style="background-color:#4CAF50;color:white;padding:10px 20px;border:none;border-radius:5px;cursor:pointer;font-size:16px;">🖨️ بل پرنٹ کریں (Print)</button>',
-                height=50
-            )
+            receipt_html = f"""
+            <script>
+            function printOnlyBill() {{
+                var printWin = window.open('', '', 'width=400,height=600');
+                printWin.document.write('<html><head><title>Print Bill</title>');
+                printWin.document.write('<style>body{{font-family:sans-serif;text-align:center;direction:rtl;}} table{{width:100%;border-collapse:collapse;margin-top:10px;}} th,td{{border-bottom:1px dashed #000;padding:5px;text-align:right;}}</style>');
+                printWin.document.write('</head><body>');
+                printWin.document.write('<h2>{shop_title}</h2><hr>');
+                printWin.document.write('<table><tr><th>چیز</th><th>تعداد</th><th>قیمت</th><th>کل</th></tr>{html_rows}</table>');
+                printWin.document.write('<h3>کل رقم: {grand_total} روپے</h3><hr>');
+                printWin.document.write('<p>شکریہ! دوبارہ تشریف لائیں۔</p>');
+                printWin.document.write('</body></html>');
+                printWin.document.close();
+                printWin.focus();
+                printWin.print();
+                printWin.close();
+            }}
+            </script>
+            <button onclick="printOnlyBill()" style="background-color:#2196F3;color:white;padding:10px 20px;border:none;border-radius:5px;cursor:pointer;font-size:16px;margin-top:10px;">🖨️ صرف بل پرنٹ کریں (Clean Receipt)</button>
+            """
+            st.components.v1.html(receipt_html, height=65)
             
             if st.button("🔄 نیا بل شروع کریں (پرانا صاف کریں)"):
                 st.session_state.cart = []
                 st.rerun()
-
+# === حصہ 2: اسٹاک مینجمنٹ ===
 elif menu == "2. اسٹاک مینجمنٹ":
     st.header("📦 اسٹاک مینجمنٹ")
     
@@ -196,18 +231,19 @@ elif menu == "2. اسٹاک مینجمنٹ":
     else:
         st.info("ابھی کوئی اسٹاک درج نہیں ہے۔")
 
+# === حصہ 3: ادھار کھاتہ سسٹم ===
 elif menu == "3. ادھار کھاتہ سسٹم":
     st.header("📒 ادھار کھاتہ (فون نمبر اور واٹس ایپ کے ساتھ)")
     
     all_khata_rows = khata_ws.get_all_values()
     my_khata = []
     for idx, row in enumerate(all_khata_rows[1:], start=2):
-        if len(row) >= 4 and row[0].strip() == current_user:
+        if len(row) >= 4 and row.strip() == current_user:
             my_khata.append({
                 "row_idx": idx,
-                "customer_name": row[1],
-                "phone": row[2],
-                "balance": float(row[3])
+                "customer_name": row,
+                "phone": row,
+                "balance": float(row)
             })
 
     tab1, tab2 = st.tabs(["➕ نیا ادھار / وصولی", "📋 کھاتہ لسٹ اور واٹس ایپ تقاضا"])
@@ -246,7 +282,7 @@ elif menu == "3. ادھار کھاتہ سسٹم":
             st.divider()
             
             for k in my_khata:
-                col1, col2 = st.columns([2, 1])
+                col1, col2 = st.columns()
                 with col1:
                     st.write(f"**👤 {k['customer_name']}** | 📞 {k['phone']}")
                     st.write(f"بقایا رقم: **{k['balance']} روپے**")
@@ -265,3 +301,24 @@ elif menu == "3. ادھار کھاتہ سسٹم":
                 st.divider()
         else:
             st.info("ابھی کوئی ادھار کھاتہ موجود نہیں ہے۔")
+
+# === حصہ 4: یوزر فیڈبیک اور اپ ڈیٹ کی درخواست ===
+elif menu == "4. رائے اور اپ ڈیٹ کی درخواست (Feedback)":
+    st.header("💬 اپنی رائے یا نئی اپ ڈیٹ کی درخواست بھیجیں")
+    st.write("اگر آپ چاہتے ہیں کہ اس سافٹ ویئر میں کوئی نیا فیچر شامل کیا جائے یا کوئی مسئلہ حل ہو، تو نیچے لکھ کر بھیجیں:")
+    
+    with st.form("feedback_form"):
+        fb_msg = st.text_area("اپنا پیغام یا مشورہ یہاں لکھیں:")
+        fb_btn = st.form_submit_button("📩 ایڈمن کو پیغام بھیجیں")
+        
+        if fb_btn:
+            if fb_msg.strip():
+                try:
+                    fb_ws = sheet.worksheet("Feedback")
+                    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+                    fb_ws.append_row([current_user, shop_title, fb_msg.strip(), now_str])
+                    st.success("شکریہ! آپ کی رائے ایڈمن تک پہنچ گئی ہے، جلد ہی اس پر عمل کیا جائے گا۔")
+                except Exception as e:
+                    st.error("فیڈبیک بھیجنے میں مسئلہ آیا۔ یقین کر لیں کہ گوگل شیٹ میں 'Feedback' ٹیب موجود ہے۔")
+            else:
+                st.warning("براہ کرم خالی پیغام نہ بھیجیں۔")
