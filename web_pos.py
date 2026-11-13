@@ -222,7 +222,6 @@ elif menu == "2. اسٹاک مینجمنٹ":
                     updated_qty = existing["quantity"] + new_qty
                     stock_ws.update_cell(existing["row_idx"], 3, new_price)
                     stock_ws.update_cell(existing["row_idx"], 4, updated_qty)
-Use code with caution.
 st.success(f"'{new_item}' کا اسٹاک اور قیمت اپ ڈیٹ ہو گئی!")
 else:
 stock_ws.append_row([current_user, new_item.strip(), new_price, new_qty])
