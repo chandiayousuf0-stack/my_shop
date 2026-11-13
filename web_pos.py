@@ -5,9 +5,10 @@ import json
 import os
 import hashlib
 from datetime import datetime, timezone, timedelta
+
 PK_TIME = timezone(timedelta(hours=5))
 
-st.set_page_config(page_title="POS & Khata System", page_icon="🛒", layout="centered")
+st.set_page_config(page_title="POS & Smart Khata System", page_icon="🛒", layout="centered")
 
 def make_hash(password):
     return hashlib.sha256(str(password).encode()).hexdigest()
@@ -16,7 +17,7 @@ def make_hash(password):
 def get_spreadsheet():
     if os.path.exists("credentials.json"):
         client = gspread.service_account(filename="credentials.json")
-        url = "https://docs.google.com/spreadsheets/d/1gHKID_B6t6A9WBP6WHaBt8QldJUUk76Urh8IWgIlThk/edit?gid=298455774#gid=298455774"
+        url = "https://google.com"
     else:
         creds_dict = json.loads(st.secrets["gcp_service_account"])
         client = gspread.service_account_from_dict(creds_dict)
@@ -72,12 +73,11 @@ if not st.session_state.logged_in:
     admin_wa = f"https://wa.me{urllib.parse.quote('السلام علیکم! مجھے اپنی دکان کے لیے POS سافٹ ویئر کا لاگ ان اکاؤنٹ بنوانا ہے۔')}"
     st.link_button("🟢 ایڈمن کو واٹس ایپ میسج کریں", admin_wa)
     st.stop()
-
 current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user}")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 3.5 (پاکستانی وقت و اسمارٹ کھاتہ)")
 
 menu = st.sidebar.radio(
     "مینیو منتخب کریں:",
@@ -102,13 +102,14 @@ khata_ws = sheet.worksheet("Khata")
 all_stock_rows = stock_ws.get_all_values()
 my_stock = []
 for idx, row in enumerate(all_stock_rows[1:], start=2):
-    if len(row) >= 4 and row[0].strip() == current_user:
+    if len(row) >= 4 and row.strip() == current_user:
         my_stock.append({
             "row_idx": idx,
-            "item_name": row[1],
-            "price": float(row[2]),
-            "quantity": int(float(row[3]))
+            "item_name": row.strip(),
+            "price": float(row),
+            "quantity": int(float(row))
         })
+
 if menu == "1. بلنگ اور سیلز (WhatsApp & Print)":
     st.header("🧾 نیا بل بنائیں")
     
@@ -234,107 +235,17 @@ elif menu == "2. اسٹاک مینجمنٹ":
         st.info("ابھی کوئی اسٹاک درج نہیں ہے۔")
 
 elif menu == "3. ادھار کھاتہ سسٹم":
-    st.header("📒 ادھار کھاتہ (فون نمبر اور واٹس ایپ کے ساتھ)")
-    
-    all_khata_rows = khata_ws.get_all_values()
-    my_khata = []
-    for idx, row in enumerate(all_khata_rows[1:], start=2):
-        if len(row) >= 4 and row[0].strip() == current_user:
-            my_khata.append({
-                "row_idx": idx,
-                "customer_name": row[1],
-                "phone": row[2],
-                "balance": float(row[3])
-            })
-
-    tab1, tab2 = st.tabs(["➕ نیا ادھار / وصولی", "📋 کھاتہ لسٹ اور واٹس ایپ تقاضا"])
-    
-    with tab1:
-        with st.form("khata_form"):
-            c_name = st.text_input("گاہک کا نام (لازمی):")
-            c_phone = st.text_input("گاہک کا واٹس ایپ نمبر (لازمی، مثلاً 03001234567):")
-            action = st.radio("عمل منتخب کریں:", ["نیا ادھار ڈالیں (+)", "رقم وصول کریں (-)"])
-            amount = st.number_input("رقم درج کریں (روپے):", min_value=1.0, step=100.0)
-            khata_btn = st.form_submit_button("💾 کھاتہ محفوظ کریں")
-            
-            if khata_btn:
-                if c_name.strip() and c_phone.strip():
-                    existing_cust = next((k for k in my_khata if k["customer_name"].lower() == c_name.strip().lower()), None)
-                    if existing_cust:
-                        old_bal = existing_cust["balance"]
-                        new_bal = (old_bal + amount) if action == "نیا ادھار ڈالیں (+)" else max(0.0, old_bal - amount)
-                        khata_ws.update_cell(existing_cust["row_idx"], 3, c_phone.strip())
-                        khata_ws.update_cell(existing_cust["row_idx"], 4, new_bal)
-                        st.success(f"{c_name} کا کھاتہ اپ ڈیٹ ہو گیا! نیا بقایا: {new_bal} روپے")
-                    else:
-                        if action == "نیا ادھار ڈالیں (+)":
-                            khata_ws.append_row([current_user, c_name.strip(), c_phone.strip(), amount])
-                            st.success(f"نیا گاہک {c_name} ({amount} روپے ادھار) محفوظ ہو گیا!")
-                        else:
-                            st.error("یہ گاہک پہلے سے کھاتے میں موجود نہیں ہے۔")
-                    st.rerun()
-                else:
-                    st.error("گاہک کا نام اور فون نمبر دونوں درج کرنا لازمی ہیں!")
-
-    with tab2:
-        if my_khata:
-            total_udhar = sum(k["balance"] for k in my_khata)
-            st.metric("مارکیٹ میں کل بقایا ادھار", f"{total_udhar} روپے")
-            st.divider()
-            
-            for k in my_khata:
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.write(f"**👤 {k['customer_name']}** | 📞 {k['phone']}")
-                    st.write(f"بقایا رقم: **{k['balance']} روپے**")
-                with col2:
-                    if k['balance'] > 0:
-                        clean_p = str(k['phone']).strip().replace("-", "").replace(" ", "")
-                        if clean_p.startswith("03"):
-                            clean_p = "92" + clean_p[1:]
-                        reminder_msg = (
-                            f"السلام علیکم {k['customer_name']} صاحب،\n"
-                            f"*{shop_title}* کی طرف سے یاددہانی ہے کہ آپ کے ذمہ *{k['balance']} روپے* ادھار بقایا ہیں۔\n"
-                            f"براہ کرم جلد ادائیگی کر دیں۔ شکریہ!"
-                        )
-                        wa_url = f"https://wa.me{clean_p}?text={urllib.parse.quote(reminder_msg)}"
-                        st.link_button("📲 واٹس ایپ پر بل بھیجیں", wa_url)
-                st.divider()
-        else:
-            st.info("ابھی کوئی ادھار کھاتہ موجود نہیں ہے۔")
-
-elif menu == "4. رائے اور اپ ڈیٹ کی درخواست (Feedback)":
-    st.header("💬 اپنی رائے یا نئی اپ ڈیٹ کی درخواست بھیجیں")
-    st.write("اگر آپ چاہتے ہیں کہ اس سافٹ ویئر میں کوئی نیا فیچر شامل کیا جائے یا کوئی مسئلہ حل ہو، تو نیچے لکھ کر بھیجیں:")
-    
-    with st.form("feedback_form"):
-        fb_msg = st.text_area("اپنا پیغام یا مشورہ یہاں لکھیں:")
-        fb_btn = st.form_submit_button("📩 ایڈمن کو پیغام بھیجیں")
-        
-        if fb_btn:
-            if fb_msg.strip():
-                try:
-                    fb_ws = sheet.worksheet("Feedback")
-                    now_str = datetime.now(PK_TIME).strftime("%d-%m-%Y %I:%M %p")
-                    fb_ws.append_row([current_user, shop_title, fb_msg.strip(), now_str])
-                    st.success("شکریہ! آپ کی رائے ایڈمن تک پہنچ گئی ہے، جلد ہی اس پر عمل کیا جائے گا۔")
-                except Exception as e:
-                    st.error("فیڈبیک بھیجنے میں مسئلہ آیا۔ یقین کر لیں کہ گوگل شیٹ میں 'Feedback' ٹیب موجود ہے۔")
-            else:
-                st.warning("براہ کرم خالی پیغام نہ بھیجیں۔")
-# === حصہ 3: اسمارٹ ادھار کھاتہ سسٹم ===
-elif menu == "3. ادھار کھاتہ سسٹم":
     st.header("📒 اسمارٹ ادھار کھاتہ سسٹم")
     
     all_khata_rows = khata_ws.get_all_values()
     my_khata = []
     for idx, row in enumerate(all_khata_rows[1:], start=2):
-        if len(row) >= 4 and row[0].strip() == current_user:
+        if len(row) >= 4 and row.strip() == current_user:
             my_khata.append({
                 "row_idx": idx,
-                "customer_name": row[1].strip(),
-                "phone": row[2].strip(),
-                "balance": float(row[3])
+                "customer_name": row.strip(),
+                "phone": row.strip(),
+                "balance": float(row)
             })
 
     try:
@@ -381,7 +292,6 @@ elif menu == "3. ادھار کھاتہ سسٹم":
                         hist_ws.append_row([current_user, selected_c_name, log_type, trans_amount, now_dt])
                     st.success(f"کامیابی! {selected_c_name} کا نیا بقایا {new_bal} روپے ہو گیا ہے۔")
                     st.rerun()
-
     with tab2:
         st.subheader("نئے گاہک کا کھاتہ کھولیں")
         with st.form("new_cust_form"):
@@ -420,14 +330,14 @@ elif menu == "3. ادھار کھاتہ سسٹم":
             total_taken = 0.0
             total_paid = 0.0
             for r in all_hist_rows[1:]:
-                if len(r) >= 5 and r[0].strip() == current_user and r[1].strip() == view_cust_name:
-                    amt = float(r[3])
-                    t_type = r[2].strip()
+                if len(r) >= 5 and r.strip() == current_user and r.strip() == view_cust_name:
+                    amt = float(r)
+                    t_type = r.strip()
                     if "+" in t_type:
                         total_taken += amt
                     else:
                         total_paid += amt
-                    cust_history.append({"تاریخ": r[4], "تفصیل": t_type, "رقم (روپے)": amt})
+                    cust_history.append({"تاریخ و وقت": r, "تفصیل": t_type, "رقم (روپے)": amt})
             
             c1, c2, c3 = st.columns(3)
             c1.metric("کل ادھار لیا", f"{total_taken} روپے")
