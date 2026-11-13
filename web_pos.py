@@ -3,20 +3,24 @@ import gspread
 import urllib.parse
 import json
 import os
+import hashlib
 from datetime import datetime
 
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1gHKID_B6t6A9WBP6WHaBt8QldJUUk76Urh8IWgIlThk/edit?gid=298455774#gid=298455774"
-
 st.set_page_config(page_title="POS & Khata System", page_icon="🛒", layout="centered")
+
+def make_hash(password):
+    return hashlib.sha256(str(password).encode()).hexdigest()
 
 @st.cache_resource
 def get_spreadsheet():
     if os.path.exists("credentials.json"):
         client = gspread.service_account(filename="credentials.json")
+        url = "https://docs.google.com/spreadsheets/d/1gHKID_B6t6A9WBP6WHaBt8QldJUUk76Urh8IWgIlThk/edit?gid=298455774#gid=298455774"
     else:
         creds_dict = json.loads(st.secrets["gcp_service_account"])
         client = gspread.service_account_from_dict(creds_dict)
-    return client.open_by_url(SHEET_URL)
+        url = st.secrets["sheet_url"]
+    return client.open_by_url(url)
 
 try:
     sheet = get_spreadsheet()
@@ -29,7 +33,6 @@ if "logged_in" not in st.session_state:
     st.session_state.username = ""
     st.session_state.shop_name = ""
 
-# --- 1. لاگ ان اسکرین (رابطہ نمبر کے ساتھ) ---
 if not st.session_state.logged_in:
     st.title("🔐 دکان مینجمنٹ سسٹم - لاگ ان")
     st.info("صرف رجسٹرڈ دکاندار اپنا یوزر نیم اور پاس ورڈ درج کریں۔")
@@ -41,11 +44,12 @@ if not st.session_state.logged_in:
         
         if submit:
             if u_name and u_pass:
+                hashed_input = make_hash(u_pass)
                 users_ws = sheet.worksheet("Users")
                 all_users = users_ws.get_all_records()
                 user_found = False
                 for row in all_users:
-                    if str(row.get("username")).strip() == u_name and str(row.get("password")).strip() == u_pass:
+                    if str(row.get("username")).strip() == u_name and str(row.get("password")).strip() == hashed_input:
                         if str(row.get("status")).strip().lower() == "active":
                             st.session_state.logged_in = True
                             st.session_state.username = u_name
@@ -63,13 +67,11 @@ if not st.session_state.logged_in:
 
     st.divider()
     st.subheader("📞 نیا اکاؤنٹ / لاگ ان بنوانے کے لیے رابطہ کریں")
-    st.write("اپنی دکان کا ذاتی اکاؤنٹ حاصل کرنے کے لیے ایڈمن سے واٹس ایپ یا کال پر رابطہ کریں:")
     st.markdown("### 📱 **0320-2609659**")
     admin_wa = f"https://wa.me{urllib.parse.quote('السلام علیکم! مجھے اپنی دکان کے لیے POS سافٹ ویئر کا لاگ ان اکاؤنٹ بنوانا ہے۔')}"
     st.link_button("🟢 ایڈمن کو واٹس ایپ میسج کریں", admin_wa)
     st.stop()
 
-# --- 2. مین ڈیش بورڈ ---
 current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
@@ -99,14 +101,13 @@ khata_ws = sheet.worksheet("Khata")
 all_stock_rows = stock_ws.get_all_values()
 my_stock = []
 for idx, row in enumerate(all_stock_rows[1:], start=2):
-    if len(row) >= 4 and row[0].strip() == current_user:
+    if len(row) >= 4 and row.strip() == current_user:
         my_stock.append({
             "row_idx": idx,
-            "item_name": row[1],
-            "price": float(row[2]),
-            "quantity": int(float(row[3]))
+            "item_name": row,
+            "price": float(row),
+            "quantity": int(float(row))
         })
-# === حصہ 1: بلنگ سسٹم (صرف بل پرنٹ اور واٹس ایپ کے ساتھ) ===
 if menu == "1. بلنگ اور سیلز (WhatsApp & Print)":
     st.header("🧾 نیا بل بنائیں")
     
@@ -198,7 +199,6 @@ if menu == "1. بلنگ اور سیلز (WhatsApp & Print)":
             if st.button("🔄 نیا بل شروع کریں (پرانا صاف کریں)"):
                 st.session_state.cart = []
                 st.rerun()
-# === حصہ 2: اسٹاک مینجمنٹ ===
 elif menu == "2. اسٹاک مینجمنٹ":
     st.header("📦 اسٹاک مینجمنٹ")
     
@@ -231,7 +231,6 @@ elif menu == "2. اسٹاک مینجمنٹ":
     else:
         st.info("ابھی کوئی اسٹاک درج نہیں ہے۔")
 
-# === حصہ 3: ادھار کھاتہ سسٹم ===
 elif menu == "3. ادھار کھاتہ سسٹم":
     st.header("📒 ادھار کھاتہ (فون نمبر اور واٹس ایپ کے ساتھ)")
     
@@ -302,7 +301,6 @@ elif menu == "3. ادھار کھاتہ سسٹم":
         else:
             st.info("ابھی کوئی ادھار کھاتہ موجود نہیں ہے۔")
 
-# === حصہ 4: یوزر فیڈبیک اور اپ ڈیٹ کی درخواست ===
 elif menu == "4. رائے اور اپ ڈیٹ کی درخواست (Feedback)":
     st.header("💬 اپنی رائے یا نئی اپ ڈیٹ کی درخواست بھیجیں")
     st.write("اگر آپ چاہتے ہیں کہ اس سافٹ ویئر میں کوئی نیا فیچر شامل کیا جائے یا کوئی مسئلہ حل ہو، تو نیچے لکھ کر بھیجیں:")
