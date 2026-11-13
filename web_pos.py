@@ -320,7 +320,7 @@ elif menu == "4. رائے اور اپ ڈیٹ کی درخواست (Feedback)":
                     st.error("فیڈبیک بھیجنے میں مسئلہ آیا۔ یقین کر لیں کہ گوگل شیٹ میں 'Feedback' ٹیب موجود ہے۔")
             else:
                 st.warning("براہ کرم خالی پیغام نہ بھیجیں۔")
-# === حصہ 3: ادھار کھاتہ سسٹم (مکمل لیجر اور فہرست کے ساتھ) ===
+# === حصہ 3: اسمارٹ ادھار کھاتہ سسٹم ===
 elif menu == "3. ادھار کھاتہ سسٹم":
     st.header("📒 اسمارٹ ادھار کھاتہ سسٹم")
     
@@ -348,7 +348,6 @@ elif menu == "3. ادھار کھاتہ سسٹم":
         "📜 گاہک کا مکمل کھاتہ اور بقایا"
     ])
 
-    # ٹیب 1: پہلے سے موجود گاہک کے لیے کلک کر کے ادھار ڈالنا یا وصول کرنا
     with tab1:
         if not my_khata:
             st.info("ابھی کوئی گاہک رجسٹرڈ نہیں ہے۔ پہلے 'نیا گاہک رجسٹر کریں' میں جا کر گاہک کا نام اور نمبر شامل کریں۔")
@@ -381,7 +380,6 @@ elif menu == "3. ادھار کھاتہ سسٹم":
                     st.success(f"کامیابی! {selected_c_name} کا نیا بقایا {new_bal} روپے ہو گیا ہے۔")
                     st.rerun()
 
-    # ٹیب 2: نیا گاہک صرف ایک بار رجسٹر کرنا
     with tab2:
         st.subheader("نئے گاہک کا کھاتہ کھولیں")
         with st.form("new_cust_form"):
@@ -405,7 +403,6 @@ elif menu == "3. ادھار کھاتہ سسٹم":
                 else:
                     st.error("گاہک کا نام اور فون نمبر دونوں درج کرنا لازمی ہیں۔")
 
-    # ٹیب 3: ہر گاہک کی مکمل تفصیل، تاریخ وار کھاتہ اور واٹس ایپ بل
     with tab3:
         if not my_khata:
             st.info("کوئی کھاتہ موجود نہیں ہے۔")
@@ -417,7 +414,6 @@ elif menu == "3. ادھار کھاتہ سسٹم":
             view_cust_name = st.selectbox("تفصیلی کھاتہ دیکھنے کے لیے گاہک منتخب کریں:", [k["customer_name"] for k in my_khata], key="view_ledger")
             v_cust = next(k for k in my_khata if k["customer_name"] == view_cust_name)
             
-            # اس گاہک کی ہسٹری نکالنا
             cust_history = []
             total_taken = 0.0
             total_paid = 0.0
@@ -442,7 +438,6 @@ elif menu == "3. ادھار کھاتہ سسٹم":
             else:
                 st.caption("ابھی اس گاہک کی پرانی تفصیل درج نہیں ہے۔")
                 
-            # واٹس ایپ پر مکمل کھاتہ اور بقایا بھیجنا
             clean_p = str(v_cust['phone']).strip().replace("-", "").replace(" ", "")
             if clean_p.startswith("03"):
                 clean_p = "92" + clean_p[1:]
@@ -458,3 +453,22 @@ elif menu == "3. ادھار کھاتہ سسٹم":
             wa_url = f"https://wa.me{clean_p}?text={urllib.parse.quote(ledger_msg)}"
             st.link_button("📲 گاہک کو مکمل کھاتہ واٹس ایپ کریں", wa_url)
 
+elif menu == "4. رائے اور اپ ڈیٹ کی درخواست (Feedback)":
+    st.header("💬 اپنی رائے یا نئی اپ ڈیٹ کی درخواست بھیجیں")
+    st.write("اگر آپ چاہتے ہیں کہ اس سافٹ ویئر میں کوئی نیا فیچر شامل کیا جائے یا کوئی مسئلہ حل ہو، تو نیچے لکھ کر بھیجیں:")
+    
+    with st.form("feedback_form"):
+        fb_msg = st.text_area("اپنا پیغام یا مشورہ یہاں لکھیں:")
+        fb_btn = st.form_submit_button("📩 ایڈمن کو پیغام بھیجیں")
+        
+        if fb_btn:
+            if fb_msg.strip():
+                try:
+                    fb_ws = sheet.worksheet("Feedback")
+                    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+                    fb_ws.append_row([current_user, shop_title, fb_msg.strip(), now_str])
+                    st.success("شکریہ! آپ کی رائے ایڈمن تک پہنچ گئی ہے، جلد ہی اس پر عمل کیا جائے گا۔")
+                except Exception as e:
+                    st.error("فیڈبیک بھیجنے میں مسئلہ آیا۔ یقین کر لیں کہ گوگل شیٹ میں Feedback ٹیب موجود ہے۔")
+            else:
+                st.warning("براہ کرم خالی پیغام نہ بھیجیں۔")
