@@ -77,6 +77,14 @@ if not st.session_state.logged_in:
                 st.warning("براہ کرم یوزر نیم اور پاس ورڈ دونوں لکھیں۔")
 
     st.divider()
+    with st.expander("🎬 ایپ کے اندر کیا کچھ ہے؟ (ڈیمو اور فیچرز دیکھیں)"):
+        st.markdown("""
+        **لاگ ان کرنے کے بعد آپ کو یہ 4 پروفیشنل سہولیات ملیں گی:**
+        * 🧾 **اسمارٹ بلنگ:** سامان منتخب کریں، بل خود بخود بنے گا، ایک کلک پر گاہک کو **واٹس ایپ** کریں یا صاف پرنٹ نکالیں۔
+        * 📦 **اسٹاک کنٹرول:** ہر چیز کی قیمت اور بقایا تعداد محفوظ رکھیں۔ بل بنتے ہی اسٹاک خود کم ہو جائے گا۔
+        * 📒 **ڈیجیٹل ادھار کھاتہ:** گاہک کا مکمل کھاتہ، کس تاریخ کو کتنا ادھار لیا اور کتنا جمع کروایا، اور ایک کلک پر واٹس ایپ پر تقاضا۔
+        * 💬 **فوری اپ ڈیٹ سپورٹ:** ایپ کے اندر سے اپنی رائے بھیجیں اور اپنی دکان کی ضرورت کے مطابق نئے فیچرز شامل کروائیں۔
+        """)
     st.subheader("📝 نیا اکاؤنٹ بنوانے کے لیے درخواست دیں")
     st.write("اپنی دکان کا ذاتی لاگ ان حاصل کرنے کے لیے **100 روپے** رجسٹریشن فیس ادا کریں اور نیچے فارم پُر کر کے جمع کروائیں:")
     
@@ -116,7 +124,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.0 (موبائل ایپ ڈیش بورڈ) (پاکستانی وقت و اسمارٹ کھاتہ)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.1 (پروفیشنل موبائل ڈیش بورڈ) (پاکستانی وقت و اسمارٹ کھاتہ)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
@@ -174,6 +182,17 @@ if st.session_state.active_page == "home":
         st.write("")
         if st.button("💬\n\nرائے اور اپ ڈیٹ\n(Feedback)", use_container_width=True):
             st.session_state.active_page = "feedback"
+            st.rerun()
+
+    st.divider()
+    _, _, corner_col = st.columns([2, 2, 1])
+    with corner_col:
+        if st.button("🚪 لاگ آؤٹ", use_container_width=True):
+            st.session_state.logged_in = False
+            st.session_state.username = ""
+            st.session_state.shop_name = ""
+            st.session_state.cart = []
+            st.session_state.active_page = "home"
             st.rerun()
 
 # === حصہ 1: بلنگ سسٹم ===
