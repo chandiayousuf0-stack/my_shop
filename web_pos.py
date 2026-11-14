@@ -116,24 +116,28 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 3.8 (پاکستانی وقت و اسمارٹ کھاتہ)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.0 (موبائل ایپ ڈیش بورڈ) (پاکستانی وقت و اسمارٹ کھاتہ)")
 
-menu = st.sidebar.radio(
-    "مینیو منتخب کریں:",
-    [
-        "1. بلنگ اور سیلز (WhatsApp & Print)",
-        "2. اسٹاک مینجمنٹ",
-        "3. ادھار کھاتہ سسٹم",
-        "4. رائے اور اپ ڈیٹ کی درخواست (Feedback)"
-    ]
-)
+if "active_page" not in st.session_state:
+    st.session_state.active_page = "home"
 
-if st.sidebar.button("🚪 لاگ آؤٹ کریں"):
-    st.session_state.logged_in = False
-    st.session_state.username = ""
-    st.session_state.shop_name = ""
-    st.session_state.cart = []
-    st.rerun()
+# اوپری پٹی میں لاگ آؤٹ اور ہوم بٹن
+top_c1, top_c2 = st.columns([3, 1])
+with top_c1:
+    if st.session_state.active_page != "home":
+        if st.button("🏠 مین ڈیش بورڈ پر واپس جائیں", use_container_width=True):
+            st.session_state.active_page = "home"
+            st.rerun()
+with top_c2:
+    if st.button("🚪 لاگ آؤٹ", use_container_width=True):
+        st.session_state.logged_in = False
+        st.session_state.username = ""
+        st.session_state.shop_name = ""
+        st.session_state.cart = []
+        st.session_state.active_page = "home"
+        st.rerun()
+
+st.divider()
 
 stock_ws = sheet.worksheet("Stock")
 khata_ws = sheet.worksheet("Khata")
@@ -149,7 +153,31 @@ for idx, row in enumerate(all_stock_rows[1:], start=2):
             "quantity": int(float(row[3]))
         })
 
-if menu == "1. بلنگ اور سیلز (WhatsApp & Print)":
+# === مین ہوم اسکرین (4 بڑے موبائل بٹن) ===
+if st.session_state.active_page == "home":
+    st.subheader("📌 مین ڈیش بورڈ — کام منتخب کریں:")
+    
+    col_a, col_b = st.columns(2)
+    with col_a:
+        if st.button("🧾\n\nبلنگ اور سیلز\n(WhatsApp & Print)", use_container_width=True):
+            st.session_state.active_page = "billing"
+            st.rerun()
+        st.write("")
+        if st.button("📒\n\nاسمارٹ ادھار کھاتہ\n(لیجر و تقاضا)", use_container_width=True):
+            st.session_state.active_page = "khata"
+            st.rerun()
+            
+    with col_b:
+        if st.button("📦\n\nاسٹاک مینجمنٹ\n(سامان و قیمت)", use_container_width=True):
+            st.session_state.active_page = "stock"
+            st.rerun()
+        st.write("")
+        if st.button("💬\n\nرائے اور اپ ڈیٹ\n(Feedback)", use_container_width=True):
+            st.session_state.active_page = "feedback"
+            st.rerun()
+
+# === حصہ 1: بلنگ سسٹم ===
+elif st.session_state.active_page == "billing":
     st.header("🧾 نیا بل بنائیں")
     
     if not my_stock:
@@ -241,7 +269,7 @@ if menu == "1. بلنگ اور سیلز (WhatsApp & Print)":
             if st.button("🔄 نیا بل شروع کریں (پرانا صاف کریں)"):
                 st.session_state.cart = []
                 st.rerun()
-elif menu == "2. اسٹاک مینجمنٹ":
+elif st.session_state.active_page == "stock":
     st.header("📦 اسٹاک مینجمنٹ")
     
     with st.form("add_stock_form"):
@@ -273,7 +301,7 @@ elif menu == "2. اسٹاک مینجمنٹ":
     else:
         st.info("ابھی کوئی اسٹاک درج نہیں ہے۔")
 
-elif menu == "3. ادھار کھاتہ سسٹم":
+elif st.session_state.active_page == "khata":
     st.header("📒 اسمارٹ ادھار کھاتہ سسٹم")
     
     all_khata_rows = khata_ws.get_all_values()
@@ -404,7 +432,7 @@ elif menu == "3. ادھار کھاتہ سسٹم":
             wa_url = f"https://wa.me{clean_p}?text={urllib.parse.quote(ledger_msg)}"
             st.link_button("📲 گاہک کو مکمل کھاتہ واٹس ایپ کریں", wa_url)
 
-elif menu == "4. رائے اور اپ ڈیٹ کی درخواست (Feedback)":
+elif st.session_state.active_page == "feedback":
     st.header("💬 اپنی رائے یا نئی اپ ڈیٹ کی درخواست بھیجیں")
     st.write("اگر آپ چاہتے ہیں کہ اس سافٹ ویئر میں کوئی نیا فیچر شامل کیا جائے یا کوئی مسئلہ حل ہو، تو نیچے لکھ کر بھیجیں:")
     
