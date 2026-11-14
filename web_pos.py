@@ -143,7 +143,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.4 (مکمل کلین اسکرین) (پاکستانی وقت و اسمارٹ کھاتہ)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.6 (مکمل کلین اسکرین) (پاکستانی وقت و اسمارٹ کھاتہ)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
@@ -478,3 +478,20 @@ elif st.session_state.active_page == "feedback":
                     st.error("فیڈبیک بھیجنے میں مسئلہ آیا۔ یقین کر لیں کہ گوگل شیٹ میں Feedback ٹیب موجود ہے۔")
             else:
                 st.warning("براہ کرم خالی پیغام نہ بھیجیں۔")
+
+
+st.markdown("""
+    <style>
+    .white-corner-mask {
+        position: fixed;
+        bottom: 0px;
+        right: 0px;
+        width: 220px;
+        height: 65px;
+        background-color: #ffffff;
+        z-index: 999999999 !important;
+        pointer-events: auto !important;
+    }
+    </style>
+    <div class="white-corner-mask"></div>
+""", unsafe_allow_html=True)
