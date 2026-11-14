@@ -77,16 +77,46 @@ if not st.session_state.logged_in:
                 st.warning("براہ کرم یوزر نیم اور پاس ورڈ دونوں لکھیں۔")
 
     st.divider()
-    st.subheader("📞 نیا اکاؤنٹ / لاگ ان بنوانے کے لیے رابطہ کریں")
-    st.markdown("### 📱 **0320-2609659**")
-    admin_wa = f"https://wa.me{urllib.parse.quote('السلام علیکم! مجھے اپنی دکان کے لیے POS سافٹ ویئر کا لاگ ان اکاؤنٹ بنوانا ہے۔')}"
-    st.link_button("🟢 ایڈمن کو واٹس ایپ میسج کریں", admin_wa)
+    st.subheader("📝 نیا اکاؤنٹ بنوانے کے لیے درخواست دیں")
+    st.write("اپنی دکان کا ذاتی لاگ ان حاصل کرنے کے لیے **100 روپے** رجسٹریشن فیس ادا کریں اور نیچے فارم پُر کر کے جمع کروائیں:")
+    
+    st.info("""
+    💳 **فیس ادائیگی کی تفصیلات (JazzCash / EasyPaisa):**
+    * **اکاؤنٹ نمبر:** `0320-2609659`
+    * **اکاؤنٹ کا نام (Title):** `Muhammad Younis`
+    * **رجسٹریشن فیس:** صرف `100 روپے`
+    """)
+
+    with st.form("new_account_request_form"):
+        req_owner = st.text_input("آپ کا پورا نام (لازمی):")
+        req_shop = st.text_input("دکان / کاروبار کا نام (لازمی):")
+        req_phone = st.text_input("آپ کا واٹس ایپ نمبر (لازمی، مثلاً 03001234567):")
+        req_trx = st.text_input("ٹرانزیکشن آئی ڈی (TID) لکھیں (اگر اسکرین شاٹ نہ ہو):")
+        req_screenshot = st.file_uploader("یا 100 روپے فیس ادائیگی کا اسکرین شاٹ اپ لوڈ کریں:", type=["png", "jpg", "jpeg"])
+        req_submit = st.form_submit_button("✅ لاگ ان کی درخواست جمع کروائیں")
+
+        if req_submit:
+            if req_owner.strip() and req_shop.strip() and req_phone.strip():
+                if req_screenshot is not None or req_trx.strip():
+                    try:
+                        req_ws = sheet.worksheet("Requests")
+                        now_pk = datetime.now(PK_TIME).strftime("%d-%m-%Y %I:%M %p")
+                        ss_status = f"اسکرین شاٹ منسلک ({req_screenshot.name})" if req_screenshot else "TID درج ہے"
+                        pay_details = f"TID: {req_trx.strip()} | {ss_status}"
+                        req_ws.append_row([req_owner.strip(), req_shop.strip(), req_phone.strip(), pay_details, now_pk])
+                        st.success("🎉 مبارک ہو! آپ کی درخواست اور 100 روپے فیس کی تفصیل موصول ہو گئی ہے۔ تصدیق کے بعد ان شاء اللہ جلد ہی آپ کا لاگ ان فعال کر کے آپ کے واٹس ایپ نمبر پر اطلاع دی جائے گی۔")
+                    except Exception as e:
+                        st.error("درخواست محفوظ کرنے میں عارضی مسئلہ آیا۔ یقین کر لیں کہ گوگل شیٹ میں 'Requests' ٹیب موجود ہے۔")
+                else:
+                    st.warning("براہ کرم 100 روپے فیس کا اسکرین شاٹ اپ لوڈ کریں یا ٹرانزیکشن آئی ڈی (TID) لکھیں۔")
+            else:
+                st.error("براہ کرم اپنا نام، دکان کا نام اور واٹس ایپ نمبر لازمی درج کریں۔")
     st.stop()
 current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 3.7 (پاکستانی وقت و اسمارٹ کھاتہ)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 3.8 (پاکستانی وقت و اسمارٹ کھاتہ)")
 
 menu = st.sidebar.radio(
     "مینیو منتخب کریں:",
