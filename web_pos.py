@@ -30,6 +30,15 @@ except Exception as e:
     st.error(f"گوگل شیٹ سے رابطہ نہیں ہو سکا: {e}")
     st.stop()
 
+if "visited" not in st.session_state:
+    st.session_state.visited = True
+    try:
+        vis_ws = sheet.worksheet("Visitors")
+        now_pk = datetime.now(PK_TIME)
+        vis_ws.append_row([now_pk.strftime("%d-%m-%Y"), now_pk.strftime("%I:%M %p")])
+    except:
+        pass
+
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
