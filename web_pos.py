@@ -124,24 +124,13 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.1 (پروفیشنل موبائل ڈیش بورڈ) (پاکستانی وقت و اسمارٹ کھاتہ)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.2 (پروفیشنل موبائل ڈیش بورڈ) (پاکستانی وقت و اسمارٹ کھاتہ)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
 
-# اوپری پٹی میں لاگ آؤٹ اور ہوم بٹن
-top_c1, top_c2 = st.columns([3, 1])
-with top_c1:
-    if st.session_state.active_page != "home":
-        if st.button("🏠 مین ڈیش بورڈ پر واپس جائیں", use_container_width=True):
-            st.session_state.active_page = "home"
-            st.rerun()
-with top_c2:
-    if st.button("🚪 لاگ آؤٹ", use_container_width=True):
-        st.session_state.logged_in = False
-        st.session_state.username = ""
-        st.session_state.shop_name = ""
-        st.session_state.cart = []
+if st.session_state.active_page != "home":
+    if st.button("🏠 مین ڈیش بورڈ پر واپس جائیں", key="back_home_btn", use_container_width=True):
         st.session_state.active_page = "home"
         st.rerun()
 
@@ -187,7 +176,7 @@ if st.session_state.active_page == "home":
     st.divider()
     _, _, corner_col = st.columns([2, 2, 1])
     with corner_col:
-        if st.button("🚪 لاگ آؤٹ", use_container_width=True):
+        if st.button("🚪 لاگ آؤٹ", key="bottom_logout_btn", use_container_width=True):
             st.session_state.logged_in = False
             st.session_state.username = ""
             st.session_state.shop_name = ""
