@@ -10,6 +10,19 @@ PK_TIME = timezone(timedelta(hours=5))
 
 st.set_page_config(page_title="POS & Smart Khata System", page_icon="🛒", layout="centered")
 
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    .stDeployButton {display: none;}
+    [data-testid="stToolbar"] {display: none !important;}
+    [data-testid="stDecoration"] {display: none !important;}
+    [data-testid="stStatusWidget"] {display: none !important;}
+    div[class*="viewerBadge"] {display: none !important;}
+    </style>
+""", unsafe_allow_html=True)
+
 def make_hash(password):
     return hashlib.sha256(str(password).encode()).hexdigest()
 
@@ -124,7 +137,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.2 (پروفیشنل موبائل ڈیش بورڈ) (پاکستانی وقت و اسمارٹ کھاتہ)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.3 (کلین پروفیشنل ایپ) (پاکستانی وقت و اسمارٹ کھاتہ)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
