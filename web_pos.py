@@ -20,6 +20,12 @@ st.markdown("""
     [data-testid="stDecoration"] {display: none !important;}
     [data-testid="stStatusWidget"] {display: none !important;}
     div[class*="viewerBadge"] {display: none !important;}
+    div[class*="viewerBadge"] {display: none !important; visibility: hidden !important;}
+    div[class*="StatusWidget"] {display: none !important; visibility: hidden !important;}
+    a[href*="streamlit.io"] {display: none !important; visibility: hidden !important;}
+    button[kind="header"] {display: none !important;}
+    .stApp > footer {display: none !important;}
+    #stDecoration {display: none !important;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -137,7 +143,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.3 (کلین پروفیشنل ایپ) (پاکستانی وقت و اسمارٹ کھاتہ)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.4 (مکمل کلین اسکرین) (پاکستانی وقت و اسمارٹ کھاتہ)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
