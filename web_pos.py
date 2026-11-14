@@ -86,7 +86,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 3.5 (پاکستانی وقت و اسمارٹ کھاتہ)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 3.7 (پاکستانی وقت و اسمارٹ کھاتہ)")
 
 menu = st.sidebar.radio(
     "مینیو منتخب کریں:",
