@@ -43,20 +43,20 @@ def get_spreadsheet():
         url = st.secrets["sheet_url"]
     return client.open_by_url(url)
 
-try:
+                        try:
     sheet = get_spreadsheet()
-except Exception as e:
+                        except Exception as e:
     st.error(f"گوگل شیٹ سے رابطہ نہیں ہو سکا: {e}")
     st.stop()
 
 if "visited" not in st.session_state:
     st.session_state.visited = True
-    try:
+                        try:
         vis_ws = sheet.worksheet("Visitors")
-        now_pk = datetime.now(PK_TIME)
+                        now_pk = datetime.now(PK_TIME)
         vis_ws.append_row([now_pk.strftime("%d-%m-%Y"), now_pk.strftime("%I:%M %p")])
-    except:
-        pass
+                        except:
+                            pass
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -75,42 +75,42 @@ if not st.session_state.logged_in:
         if submit:
             if u_name and u_pass:
                 hashed_input = make_hash(u_pass)
-                users_ws = sheet.worksheet("Users")
-                    existing_users = users_ws.get_all_values()
-                    next_num = len(existing_users) + 100
-                    auto_username = f"dukan{next_num}"
-                    now_pk = datetime.now(PK_TIME).strftime("%d-%m-%Y %I:%M %p")
-                    tid_val = req_trx.strip() if req_trx.strip() else "نہیں لکھی"
-                    ss_val = req_screenshot.name if req_screenshot is not None else "نہیں لگایا"
+                        users_ws = sheet.worksheet("Users")
+                        existing_users = users_ws.get_all_values()
+                        next_num = len(existing_users) + 100
+                        auto_username = f"dukan{next_num}"
+                        now_pk = datetime.now(PK_TIME).strftime("%d-%m-%Y %I:%M %p")
+                        tid_val = req_trx.strip() if req_trx.strip() else "نہیں لکھی"
+                        ss_val = req_screenshot.name if req_screenshot is not None else "نہیں لگایا"
                         
-                    # 1. Users ٹیب میں ہر خانہ الگ درج کرنا (A=shop_name, B=password, C=username, D=status...)
-                    users_ws.append_row([
-                        req_shop.strip(),
-                        "WAITING_PASS",
-                        auto_username,
-                        "pending",
-                        req_owner.strip(),
-                        req_phone.strip(),
-                        tid_val,
-                        ss_val,
-                        now_pk
+                        # 1. Users ٹیب میں ہر خانہ الگ درج کرنا (A=shop_name, B=password, C=username, D=status...)
+                        users_ws.append_row([
+                            req_shop.strip(),
+                            "WAITING_PASS",
+                            auto_username,
+                            "pending",
+                            req_owner.strip(),
+                            req_phone.strip(),
+                            tid_val,
+                            ss_val,
+                            now_pk
                         ])
                         
-                    # 2. Requests ٹیب میں بھی الگ الگ خانوں میں ریکارڈ محفوظ کرنا
-                    try:
-                        req_ws = sheet.worksheet("Requests")
-                        req_ws.append_row([
-                        req_owner.strip(),
-                        req_shop.strip(),
-                        req_phone.strip(),
-                        tid_val,
-                        ss_val,
-                        now_pk
+                        # 2. Requests ٹیب میں بھی الگ الگ خانوں میں ریکارڈ محفوظ کرنا
+                        try:
+                            req_ws = sheet.worksheet("Requests")
+                            req_ws.append_row([
+                                req_owner.strip(),
+                                req_shop.strip(),
+                                req_phone.strip(),
+                                tid_val,
+                                ss_val,
+                                now_pk
                             ])
-                    except:
-                        pass
+                        except:
+                            pass
                         st.success("🎉 مبارک ہو! آپ کی درخواست اور 100 روپے فیس کی تفصیل موصول ہو گئی ہے۔ تصدیق کے بعد ان شاء اللہ جلد ہی آپ کا لاگ ان فعال کر کے آپ کے واٹس ایپ نمبر پر اطلاع دی جائے گی۔")
-                    except Exception as e:
+                        except Exception as e:
                         st.error("درخواست محفوظ کرنے میں عارضی مسئلہ آیا۔ یقین کر لیں کہ گوگل شیٹ میں 'Requests' ٹیب موجود ہے۔")
                 else:
                     st.warning("براہ کرم 100 روپے فیس کا اسکرین شاٹ اپ لوڈ کریں یا ٹرانزیکشن آئی ڈی (TID) لکھیں۔")
@@ -121,7 +121,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.9 (مکمل کلین اسکرین) (پاکستانی وقت و اسمارٹ کھاتہ)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 5.1 (مکمل کلین اسکرین) (پاکستانی وقت و اسمارٹ کھاتہ)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
@@ -320,10 +320,10 @@ elif st.session_state.active_page == "khata":
                 "balance": float(row[3])
             })
 
-    try:
+                        try:
         hist_ws = sheet.worksheet("Khata_History")
         all_hist_rows = hist_ws.get_all_values()
-    except:
+                        except:
         hist_ws = None
         all_hist_rows = []
 
@@ -331,7 +331,7 @@ elif st.session_state.active_page == "khata":
         "🔄 ادھار / وصولی (فہرست سے چنیں)",
         "➕ نیا گاہک رجسٹر کریں",
         "📜 گاہک کا مکمل کھاتہ اور بقایا"
-    ])
+                        ])
 
     with tab1:
         if not my_khata:
@@ -447,12 +447,12 @@ elif st.session_state.active_page == "feedback":
         
         if fb_btn:
             if fb_msg.strip():
-                try:
+                        try:
                     fb_ws = sheet.worksheet("Feedback")
                     now_str = datetime.now(PK_TIME).strftime("%d-%m-%Y %I:%M %p")
                     fb_ws.append_row([current_user, shop_title, fb_msg.strip(), now_str])
                     st.success("شکریہ! آپ کی رائے ایڈمن تک پہنچ گئی ہے، جلد ہی اس پر عمل کیا جائے گا۔")
-                except Exception as e:
+                        except Exception as e:
                     st.error("فیڈبیک بھیجنے میں مسئلہ آیا۔ یقین کر لیں کہ گوگل شیٹ میں Feedback ٹیب موجود ہے۔")
             else:
                 st.warning("براہ کرم خالی پیغام نہ بھیجیں۔")
