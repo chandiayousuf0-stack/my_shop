@@ -76,39 +76,39 @@ if not st.session_state.logged_in:
             if u_name and u_pass:
                 hashed_input = make_hash(u_pass)
                 users_ws = sheet.worksheet("Users")
-                        existing_users = users_ws.get_all_values()
-                        next_num = len(existing_users) + 100
-                        auto_username = f"dukan{next_num}"
-                        now_pk = datetime.now(PK_TIME).strftime("%d-%m-%Y %I:%M %p")
-                        tid_val = req_trx.strip() if req_trx.strip() else "نہیں لکھی"
-                        ss_val = req_screenshot.name if req_screenshot is not None else "نہیں لگایا"
+                    existing_users = users_ws.get_all_values()
+                    next_num = len(existing_users) + 100
+                    auto_username = f"dukan{next_num}"
+                    now_pk = datetime.now(PK_TIME).strftime("%d-%m-%Y %I:%M %p")
+                    tid_val = req_trx.strip() if req_trx.strip() else "نہیں لکھی"
+                    ss_val = req_screenshot.name if req_screenshot is not None else "نہیں لگایا"
                         
-                        # 1. Users ٹیب میں ہر خانہ الگ درج کرنا (A=shop_name, B=password, C=username, D=status...)
-                        users_ws.append_row([
-                            req_shop.strip(),
-                            "WAITING_PASS",
-                            auto_username,
-                            "pending",
-                            req_owner.strip(),
-                            req_phone.strip(),
-                            tid_val,
-                            ss_val,
-                            now_pk
+                    # 1. Users ٹیب میں ہر خانہ الگ درج کرنا (A=shop_name, B=password, C=username, D=status...)
+                    users_ws.append_row([
+                        req_shop.strip(),
+                        "WAITING_PASS",
+                        auto_username,
+                        "pending",
+                        req_owner.strip(),
+                        req_phone.strip(),
+                        tid_val,
+                        ss_val,
+                        now_pk
                         ])
                         
-                        # 2. Requests ٹیب میں بھی الگ الگ خانوں میں ریکارڈ محفوظ کرنا
-                        try:
-                            req_ws = sheet.worksheet("Requests")
-                            req_ws.append_row([
-                                req_owner.strip(),
-                                req_shop.strip(),
-                                req_phone.strip(),
-                                tid_val,
-                                ss_val,
-                                now_pk
+                    # 2. Requests ٹیب میں بھی الگ الگ خانوں میں ریکارڈ محفوظ کرنا
+                    try:
+                        req_ws = sheet.worksheet("Requests")
+                        req_ws.append_row([
+                        req_owner.strip(),
+                        req_shop.strip(),
+                        req_phone.strip(),
+                        tid_val,
+                        ss_val,
+                        now_pk
                             ])
-                        except:
-                            pass
+                    except:
+                        pass
                         st.success("🎉 مبارک ہو! آپ کی درخواست اور 100 روپے فیس کی تفصیل موصول ہو گئی ہے۔ تصدیق کے بعد ان شاء اللہ جلد ہی آپ کا لاگ ان فعال کر کے آپ کے واٹس ایپ نمبر پر اطلاع دی جائے گی۔")
                     except Exception as e:
                         st.error("درخواست محفوظ کرنے میں عارضی مسئلہ آیا۔ یقین کر لیں کہ گوگل شیٹ میں 'Requests' ٹیب موجود ہے۔")
@@ -121,7 +121,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.8 (مکمل کلین اسکرین) (پاکستانی وقت و اسمارٹ کھاتہ)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.9 (مکمل کلین اسکرین) (پاکستانی وقت و اسمارٹ کھاتہ)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
