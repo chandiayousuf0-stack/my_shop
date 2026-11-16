@@ -45,6 +45,15 @@ except Exception as e:
     st.error(f"گوگل شیٹ سے رابطہ نہیں ہو سکا: {e}")
     st.stop()
 
+if "visited" not in st.session_state:
+    st.session_state.visited = True
+    try:
+        vis_ws = sheet.worksheet("Visitors")
+        now_pk = datetime.now(PK_TIME)
+        vis_ws.append_row([now_pk.strftime("%d-%m-%Y"), now_pk.strftime("%I:%M %p")])
+    except Exception:
+        pass
+
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
@@ -160,7 +169,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 5.3 (مکمل آٹو رجسٹریشن و کلین ایپ)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 5.4 (آٹو رجسٹریشن و وزٹر کاؤنٹر)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
