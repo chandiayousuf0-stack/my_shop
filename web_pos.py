@@ -126,11 +126,14 @@ if not st.session_state.logged_in:
             if req_owner.strip() and req_shop.strip() and req_phone.strip():
                 if req_screenshot is not None or req_trx.strip():
                     try:
-                        req_ws = sheet.worksheet("Requests")
+                        users_ws = sheet.worksheet("Users")
+                        existing_users = users_ws.get_all_values()
+                        next_num = len(existing_users) + 100
+                        auto_username = f"dukan{next_num}"
                         now_pk = datetime.now(PK_TIME).strftime("%d-%m-%Y %I:%M %p")
-                        ss_status = f"اسکرین شاٹ منسلک ({req_screenshot.name})" if req_screenshot else "TID درج ہے"
-                        pay_details = f"TID: {req_trx.strip()} | {ss_status}"
-                        req_ws.append_row([req_owner.strip(), req_shop.strip(), req_phone.strip(), pay_details, now_pk])
+                        ss_status = f"اسکرین شاٹ ({req_screenshot.name})" if req_screenshot else "TID"
+                        pay_details = f"TID: {req_trx.strip()} | {ss_status} | {now_pk} | مالک: {req_owner.strip()}"
+                        users_ws.append_row([auto_username, "WAITING_PASS", req_shop.strip(), "pending", req_phone.strip(), pay_details])
                         st.success("🎉 مبارک ہو! آپ کی درخواست اور 100 روپے فیس کی تفصیل موصول ہو گئی ہے۔ تصدیق کے بعد ان شاء اللہ جلد ہی آپ کا لاگ ان فعال کر کے آپ کے واٹس ایپ نمبر پر اطلاع دی جائے گی۔")
                     except Exception as e:
                         st.error("درخواست محفوظ کرنے میں عارضی مسئلہ آیا۔ یقین کر لیں کہ گوگل شیٹ میں 'Requests' ٹیب موجود ہے۔")
@@ -143,7 +146,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.6 (مکمل کلین اسکرین) (پاکستانی وقت و اسمارٹ کھاتہ)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 4.7 (مکمل کلین اسکرین) (پاکستانی وقت و اسمارٹ کھاتہ)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
