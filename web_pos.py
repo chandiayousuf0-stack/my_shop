@@ -63,7 +63,7 @@ if "logged_in" not in st.session_state:
 # --- 1. لاگ ان اسکرین ---
 if not st.session_state.logged_in:
     st.title("🔐 اسمارٹ کاروبار و دکان مینجمنٹ سسٹم")
-    st.caption("ورژن 6.0 | مکمل سیلز، اسٹاک، سپلائر کھاتہ و نفع نقصان")
+    st.caption("ورژن 6.1 | مکمل سیلز، اسٹاک، سپلائر کھاتہ و نفع نقصان")
 
     with st.form("login_form"):
         u_name = st.text_input("یوزر نیم (Username)").strip()
@@ -151,7 +151,7 @@ if not st.session_state.logged_in:
             * 📈 **خالص نفع و نقصان رپورٹ**
             """)
     with col_info2:
-        with st.expander("🆕 ورژن 6.0 میں نیا کیا ہے؟"):
+        with st.expander("🆕 ورژن 6.1 میں نیا کیا ہے؟"):
             st.markdown("""
             * **سپلائر لین دین:** مال خریدنے پر خودکار اسٹاک انٹری اور سپلائر کا ادھار حساب۔
             * **نفع و نقصان رپورٹ:** خرید و فروخت کا موازنہ اور بقایا لین دین۔
@@ -207,7 +207,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 6.0 (مکمل کاروباری ERP سسٹم)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 6.1 (مکمل کاروباری ERP سسٹم)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
@@ -234,7 +234,7 @@ for idx, row in enumerate(all_stock_rows[1:], start=2):
             "buy_price": b_price
         })
 
-# === مین ڈیش بورڈ (6 پروفیشنل بٹن) ===
+# === مین ڈیش بورڈ (ترتیب وار پروفیشنل بٹن) ===
 if st.session_state.active_page == "home":
     st.subheader("📌 مین ڈیش بورڈ — کام منتخب کریں:")
     col_a, col_b = st.columns(2)
@@ -247,8 +247,8 @@ if st.session_state.active_page == "home":
             st.session_state.active_page = "khata"
             st.rerun()
         st.write("")
-        if st.button("🆕\n\nاپ ڈیٹ تفصیل (v6.0)\nو رائے (Feedback)", use_container_width=True):
-            st.session_state.active_page = "updates_fb"
+        if st.button("📈\n\nنفع و نقصان\nاور مکمل حساب کتاب", use_container_width=True):
+            st.session_state.active_page = "pnl"
             st.rerun()
 
     with col_b:
@@ -260,8 +260,8 @@ if st.session_state.active_page == "home":
             st.session_state.active_page = "stock"
             st.rerun()
         st.write("")
-        if st.button("📈\n\nنفع و نقصان\nاور مکمل حساب کتاب", use_container_width=True):
-            st.session_state.active_page = "pnl"
+        if st.button("🆕\n\nاپ ڈیٹ تفصیل (v6.1)\nو رائے (Feedback)", use_container_width=True):
+            st.session_state.active_page = "updates_fb"
             st.rerun()
 
     st.divider()
@@ -635,7 +635,7 @@ elif st.session_state.active_page == "khata":
 
 # === صفحہ 6: اپ ڈیٹ لاگ (v6.0) و فیڈبیک ===
 elif st.session_state.active_page == "updates_fb":
-    st.header("🆕 ورژن 6.0 اپ ڈیٹ لاگ و صارف کی رائے")
+    st.header("🆕 ورژن 6.1 اپ ڈیٹ لاگ و صارف کی رائے")
     st.info("""
     **اس نئے ورژن (v6.0) میں یہ پروفیشنل سہولیات شامل کی گئی ہیں:**
     1. **سپلائر (Seller) و خریداری کھاتہ:** اب آپ جس ہول سیلر سے مال خریدیں گے اس کا ریکارڈ اور ادھار کھاتہ الگ محفوظ ہوگا، اور سامان خودکار طریقے سے اسٹاک میں شامل ہو جائے گا۔
