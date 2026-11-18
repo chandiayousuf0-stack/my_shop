@@ -50,7 +50,7 @@ if "visited" not in st.session_state:
     try:
         vis_ws = sheet.worksheet("Visitors")
         now_pk = datetime.now(PK_TIME)
-        vis_ws.append_row([now_pk.strftime("%d-%m-%Y"), now_pk.strftime("%I:%M %p")])
+        vis_ws.append_row([now_pk.strftime("%d-%m-%Y"), now_pk.strftime("%I:%M %p"), "🌐 Link Visit (لنک کھولا)"])
     except Exception:
         pass
 
@@ -63,7 +63,7 @@ if "logged_in" not in st.session_state:
 # --- 1. لاگ ان اسکرین ---
 if not st.session_state.logged_in:
     st.title("🔐 اسمارٹ کاروبار و دکان مینجمنٹ سسٹم")
-    st.caption("ورژن 6.5 | مکمل سیلز، اسٹاک، سپلائر کھاتہ و نفع نقصان")
+    st.caption("ورژن 6.6 | مکمل سیلز، اسٹاک، سپلائر کھاتہ و نفع نقصان")
 
     with st.form("login_form"):
         u_name = st.text_input("یوزر نیم (Username)").strip()
@@ -151,13 +151,39 @@ if not st.session_state.logged_in:
             * 📈 **خالص نفع و نقصان رپورٹ**
             """)
     with col_info2:
-        with st.expander("🆕 ورژن 6.5 میں نیا کیا ہے؟"):
+        with st.expander("🆕 ورژن 6.6 میں نیا کیا ہے؟"):
             st.markdown("""
             * **سپلائر لین دین:** مال خریدنے پر خودکار اسٹاک انٹری اور سپلائر کا ادھار حساب۔
             * **نفع و نقصان رپورٹ:** خرید و فروخت کا موازنہ اور بقایا لین دین۔
             * **3 دن آٹو سیکیورٹی:** غیر فعال اکاؤنٹس کا خودکار تحفظ اور فوری بحالی بٹن۔
             """)
 
+    st.markdown("### 🎬 ایپ انسٹال کرنے اور چلانے کا مکمل طریقہ (ویڈیو گائیڈ)")
+    st.info("نئے دکاندار اکاؤنٹ بنانے سے پہلے یہ مختصر ویڈیو ضرور دیکھیں تاکہ آپ کو ایپ انسٹال کرنے اور بلنگ/کھاتہ چلانے کی مکمل سمجھ آ جائے:")
+
+    if "show_demo_vid" not in st.session_state:
+        st.session_state.show_demo_vid = False
+    if "vid_logged" not in st.session_state:
+        st.session_state.vid_logged = False
+
+    if st.button("▶️ مکمل ڈیمو ویڈیو چلائیں (انسٹالیشن + فیچرز)", use_container_width=True):
+        st.session_state.show_demo_vid = True
+        if not st.session_state.vid_logged:
+            st.session_state.vid_logged = True
+            try:
+                vis_ws = sheet.worksheet("Visitors")
+                now_pk = datetime.now(PK_TIME)
+                vis_ws.append_row([now_pk.strftime("%d-%m-%Y"), now_pk.strftime("%I:%M %p"), "🎬 Video Watched (ڈیمو ویڈیو دیکھی)"])
+            except Exception:
+                pass
+
+    if st.session_state.show_demo_vid:
+        if os.path.exists("final_master_hd.mp4"):
+            st.video("final_master_hd.mp4")
+        else:
+            st.warning("ویڈیو فائل لوڈ ہو رہی ہے، براہ کرم یقین کر لیں کہ final_master_hd.mp4 GitHub پر اپ لوڈ ہو چکی ہے۔")
+
+    st.divider()
     st.subheader("📝 نیا اکاؤنٹ بنوانے کے لیے درخواست دیں")
     st.info("""
     💳 **فیس ادائیگی کی تفصیلات (JazzCash / EasyPaisa):**
@@ -207,7 +233,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 6.5 (دکان و آڑھت ERP سسٹم)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 6.6 (دکان و آڑھت ERP سسٹم)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
@@ -669,7 +695,7 @@ elif st.session_state.active_page == "khata":
             st.link_button("📲 گاہک کو بقایا کھاتہ واٹس ایپ کریں", f"https://wa.me{clean_p}?text={urllib.parse.quote(ledger_msg)}")
 
 elif st.session_state.active_page == "updates_fb":
-    st.header("🆕 ورژن 6.5 اپ ڈیٹ لاگ و صارف کی رائے")
+    st.header("🆕 ورژن 6.6 اپ ڈیٹ لاگ و صارف کی رائے")
     st.info("""
     **اس نئے ورژن (v6.2) میں یہ جدید سہولیات شامل کی گئی ہیں:**
     1. **پہلے سے موجود اسٹاک کا اندراج:** اب آپ پرانا اسٹاک براہِ راست درج کر سکتے ہیں۔
