@@ -63,7 +63,7 @@ if "logged_in" not in st.session_state:
 # --- 1. لاگ ان اسکرین ---
 if not st.session_state.logged_in:
     st.title("🔐 اسمارٹ کاروبار و دکان مینجمنٹ سسٹم")
-    st.caption("ورژن 6.1 | مکمل سیلز، اسٹاک، سپلائر کھاتہ و نفع نقصان")
+    st.caption("ورژن 6.3 | مکمل سیلز، اسٹاک، سپلائر کھاتہ و نفع نقصان")
 
     with st.form("login_form"):
         u_name = st.text_input("یوزر نیم (Username)").strip()
@@ -151,7 +151,7 @@ if not st.session_state.logged_in:
             * 📈 **خالص نفع و نقصان رپورٹ**
             """)
     with col_info2:
-        with st.expander("🆕 ورژن 6.1 میں نیا کیا ہے؟"):
+        with st.expander("🆕 ورژن 6.3 میں نیا کیا ہے؟"):
             st.markdown("""
             * **سپلائر لین دین:** مال خریدنے پر خودکار اسٹاک انٹری اور سپلائر کا ادھار حساب۔
             * **نفع و نقصان رپورٹ:** خرید و فروخت کا موازنہ اور بقایا لین دین۔
@@ -173,7 +173,7 @@ if not st.session_state.logged_in:
         req_submit = st.form_submit_button("✅ لاگ ان کی درخواست جمع کروائیں")
 
         if req_submit:
-            if req_owner.strip() and req_shop.strip() and req_phone.strip():
+            if req_owner[0].strip() and req_shop.strip() and req_phone.strip():
                 if req_screenshot is not None or req_trx.strip():
                     try:
                         users_ws = sheet.worksheet("Users")
@@ -187,11 +187,11 @@ if not st.session_state.logged_in:
 
                         users_ws.append_row([
                             req_shop.strip(), "WAITING_PASS", auto_username, "pending",
-                            req_owner.strip(), req_phone.strip(), tid_val, ss_val, now_pk, today_only
+                            req_owner[0].strip(), req_phone.strip(), tid_val, ss_val, now_pk, today_only
                         ])
                         try:
                             req_ws = sheet.worksheet("Requests")
-                            req_ws.append_row([req_owner.strip(), req_shop.strip(), req_phone.strip(), tid_val, ss_val, now_pk])
+                            req_ws.append_row([req_owner[0].strip(), req_shop.strip(), req_phone.strip(), tid_val, ss_val, now_pk])
                         except Exception:
                             pass
 
@@ -207,7 +207,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 6.2 (دکان و آڑھت ERP سسٹم)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 6.3 (دکان و آڑھت ERP سسٹم)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
@@ -224,13 +224,13 @@ khata_ws = sheet.worksheet("Khata")
 all_stock_rows = stock_ws.get_all_values()
 my_stock = []
 for idx, row in enumerate(all_stock_rows[1:], start=2):
-    if len(row) >= 4 and row.strip() == current_user:
-        b_price = float(row) if len(row) >= 5 and row.strip() else 0.0
+    if len(row) >= 4 and row[0].strip() == current_user:
+        b_price = float(row[4]) if len(row) >= 5 and row[4].strip() else 0.0
         my_stock.append({
             "row_idx": idx,
-            "item_name": row.strip(),
-            "price": float(row),
-            "quantity": float(row),
+            "item_name": row[1].strip(),
+            "price": float(row[2]),
+            "quantity": float(row[3]),
             "buy_price": b_price
         })
 
@@ -359,8 +359,8 @@ elif st.session_state.active_page == "purchases":
     all_sup_rows = sup_ws.get_all_values()
     my_suppliers = []
     for idx, r in enumerate(all_sup_rows[1:], start=2):
-        if len(r) >= 4 and r.strip() == current_user:
-            my_suppliers.append({"row_idx": idx, "name": r.strip(), "phone": r.strip(), "payable": float(r)})
+        if len(r) >= 4 and r[0].strip() == current_user:
+            my_suppliers.append({"row_idx": idx, "name": r[1].strip(), "phone": r[2].strip(), "payable": float(r[3])})
 
     if "pur_cart" not in st.session_state:
         st.session_state.pur_cart = []
@@ -456,9 +456,9 @@ elif st.session_state.active_page == "purchases":
 
     with ptab3:
         all_p_rows = pur_ws.get_all_values()
-        my_p_list = [r for r in all_p_rows[1:] if len(r) >= 8 and r.strip() == current_user]
+        my_p_list = [r for r in all_p_rows[1:] if len(r) >= 8 and r[0].strip() == current_user]
         if my_p_list:
-            st.table([{"تاریخ": r, "سپلائر": r, "چیز": r, "مقدار": r, "خرید": r, "تفصیل": r} for r in my_p_list])
+            st.table([{"تاریخ": r[7], "سپلائر": r[1], "چیز": r[2], "مقدار": r[3], "خرید": r[4], "تفصیل": r[6]} for r in my_p_list])
         else:
             st.info("ابھی کوئی خریداری درج نہیں ہوئی۔")
 
@@ -499,12 +499,12 @@ elif st.session_state.active_page == "stock":
 elif st.session_state.active_page == "pnl":
     st.header("📈 نفع و نقصان اور مکمل کاروباری حساب")
     all_k = khata_ws.get_all_values()
-    cust_receivable = sum(float(r) for r in all_k[1:] if len(r) >= 4 and r.strip() == current_user)
+    cust_receivable = sum(float(r[3]) for r in all_k[1:] if len(r) >= 4 and r[0].strip() == current_user)
 
     try:
         sup_ws = sheet.worksheet("Suppliers")
         all_s = sup_ws.get_all_values()
-        sup_payable = sum(float(r) for r in all_s[1:] if len(r) >= 4 and r.strip() == current_user)
+        sup_payable = sum(float(r[3]) for r in all_s[1:] if len(r) >= 4 and r[0].strip() == current_user)
     except Exception:
         sup_payable = 0.0
 
@@ -530,8 +530,8 @@ elif st.session_state.active_page == "khata":
     all_khata_rows = khata_ws.get_all_values()
     my_khata = []
     for idx, row in enumerate(all_khata_rows[1:], start=2):
-        if len(row) >= 4 and row.strip() == current_user:
-            my_khata.append({"row_idx": idx, "customer_name": row.strip(), "phone": row.strip(), "balance": float(row)})
+        if len(row) >= 4 and row[0].strip() == current_user:
+            my_khata.append({"row_idx": idx, "customer_name": row[1].strip(), "phone": row[2].strip(), "balance": float(row[3])})
 
     try:
         hist_ws = sheet.worksheet("Khata_History")
@@ -591,8 +591,8 @@ elif st.session_state.active_page == "khata":
             v_cust = next(k for k in my_khata if k["customer_name"] == view_cust_name)
             cust_history = []
             for r in all_hist_rows[1:]:
-                if len(r) >= 5 and r.strip() == current_user and r.strip() == view_cust_name:
-                    cust_history.append({"تاریخ و وقت": r, "تفصیل": r, "رقم": float(r)})
+                if len(r) >= 5 and r[0].strip() == current_user and r[0].strip() == view_cust_name:
+                    cust_history.append({"تاریخ و وقت": r[4], "تفصیل": r[2], "رقم": float(r[3])})
             if cust_history:
                 st.table(cust_history)
             clean_p = str(v_cust['phone']).strip().replace("-", "").replace(" ", "")
@@ -602,7 +602,7 @@ elif st.session_state.active_page == "khata":
             st.link_button("📲 گاہک کو کھاتہ واٹس ایپ کریں", f"https://wa.me{clean_p}?text={urllib.parse.quote(ledger_msg)}")
 
 elif st.session_state.active_page == "updates_fb":
-    st.header("🆕 ورژن 6.2 اپ ڈیٹ لاگ و صارف کی رائے")
+    st.header("🆕 ورژن 6.3 اپ ڈیٹ لاگ و صارف کی رائے")
     st.info("""
     **اس نئے ورژن (v6.2) میں یہ جدید سہولیات شامل کی گئی ہیں:**
     1. **پہلے سے موجود اسٹاک کا اندراج:** اب آپ پرانا اسٹاک براہِ راست درج کر سکتے ہیں۔
