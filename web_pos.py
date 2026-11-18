@@ -63,7 +63,7 @@ if "logged_in" not in st.session_state:
 # --- 1. لاگ ان اسکرین ---
 if not st.session_state.logged_in:
     st.title("🔐 اسمارٹ کاروبار و دکان مینجمنٹ سسٹم")
-    st.caption("ورژن 6.4 | مکمل سیلز، اسٹاک، سپلائر کھاتہ و نفع نقصان")
+    st.caption("ورژن 6.5 | مکمل سیلز، اسٹاک، سپلائر کھاتہ و نفع نقصان")
 
     with st.form("login_form"):
         u_name = st.text_input("یوزر نیم (Username)").strip()
@@ -151,7 +151,7 @@ if not st.session_state.logged_in:
             * 📈 **خالص نفع و نقصان رپورٹ**
             """)
     with col_info2:
-        with st.expander("🆕 ورژن 6.4 میں نیا کیا ہے؟"):
+        with st.expander("🆕 ورژن 6.5 میں نیا کیا ہے؟"):
             st.markdown("""
             * **سپلائر لین دین:** مال خریدنے پر خودکار اسٹاک انٹری اور سپلائر کا ادھار حساب۔
             * **نفع و نقصان رپورٹ:** خرید و فروخت کا موازنہ اور بقایا لین دین۔
@@ -207,7 +207,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 6.4 (دکان و آڑھت ERP سسٹم)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 6.5 (دکان و آڑھت ERP سسٹم)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
@@ -637,24 +637,39 @@ elif st.session_state.active_page == "khata":
                     st.error("نام اور فون نمبر لازمی ہیں۔")
 
     with tab3:
-        if my_khata:
-            st.metric("کل لینی باقی رقم", f"{sum(k['balance'] for k in my_khata):,.0f} روپے")
-            view_cust_name = st.selectbox("کھاتہ دیکھنے کے لیے گاہک چنیں:", [k["customer_name"] for k in my_khata], key="view_ledger")
-            v_cust = next(k for k in my_khata if k["customer_name"] == view_cust_name)
+        if not my_khata:
+            st.info("ابھی کوئی گاہک رجسٹرڈ نہیں ہے۔")
+        else:
+            st.metric("مارکیٹ میں کل لینی باقی رقم", f"{sum(k['balance'] for k in my_khata):,.0f} روپے")
+            st.divider()
+            view_cust_name = st.selectbox("مکمل ہسٹری دیکھنے کے لیے گاہک منتخب کریں:", [k['customer_name'] for k in my_khata], key="view_ledger")
+            v_cust = next(k for k in my_khata if k['customer_name'] == view_cust_name)
+
             cust_history = []
             for r in all_hist_rows[1:]:
-                if len(r) >= 5 and r[0].strip() == current_user and r[0].strip() == view_cust_name:
-                    cust_history.append({"تاریخ و وقت": r[4], "تفصیل": r[2], "رقم": float(r[3])})
+                if len(r) >= 5 and r[0].strip() == current_user and r[1].strip() == view_cust_name:
+                    cust_history.append({
+                        "تاریخ و وقت": r[4],
+                        "اشیاء و لین دین کی تفصیل": r[2],
+                        "رقم (روپے)": r[3]
+                    })
+
+            st.info(f"👤 گاہک: **{v_cust['customer_name']}** | 📞 فون: **{v_cust['phone']}** | 💰 موجودہ بقایا: **{v_cust['balance']} روپے**")
+
             if cust_history:
+                st.write("**📜 Khata_History سے مکمل ریکارڈ (تاریخ، وقت اور اشیاء):**")
                 st.table(cust_history)
+            else:
+                st.warning("اس گاہک کی Khata_History شیٹ میں ابھی کوئی پرانی انٹری موجود نہیں ہے۔")
+
             clean_p = str(v_cust['phone']).strip().replace("-", "").replace(" ", "")
             if clean_p.startswith("03"):
                 clean_p = "92" + clean_p[1:]
-            ledger_msg = f"السلام علیکم {v_cust['customer_name']} صاحب، *{shop_title}* کے ذمہ آپ کا بقایا ادھار *{v_cust['balance']} روپے* ہے۔ شکریہ!"
-            st.link_button("📲 گاہک کو کھاتہ واٹس ایپ کریں", f"https://wa.me{clean_p}?text={urllib.parse.quote(ledger_msg)}")
+            ledger_msg = f"السلام علیکم {v_cust['customer_name']} صاحب، *{shop_title}* کے ذمہ آپ کا موجودہ بقایا ادھار *{v_cust['balance']} روپے* ہے۔ شکریہ!"
+            st.link_button("📲 گاہک کو بقایا کھاتہ واٹس ایپ کریں", f"https://wa.me{clean_p}?text={urllib.parse.quote(ledger_msg)}")
 
 elif st.session_state.active_page == "updates_fb":
-    st.header("🆕 ورژن 6.4 اپ ڈیٹ لاگ و صارف کی رائے")
+    st.header("🆕 ورژن 6.5 اپ ڈیٹ لاگ و صارف کی رائے")
     st.info("""
     **اس نئے ورژن (v6.2) میں یہ جدید سہولیات شامل کی گئی ہیں:**
     1. **پہلے سے موجود اسٹاک کا اندراج:** اب آپ پرانا اسٹاک براہِ راست درج کر سکتے ہیں۔
