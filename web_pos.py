@@ -207,7 +207,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 6.1 (مکمل کاروباری ERP سسٹم)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 6.2 (دکان و آڑھت ERP سسٹم)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
@@ -224,22 +224,21 @@ khata_ws = sheet.worksheet("Khata")
 all_stock_rows = stock_ws.get_all_values()
 my_stock = []
 for idx, row in enumerate(all_stock_rows[1:], start=2):
-    if len(row) >= 4 and row[0].strip() == current_user:
-        b_price = float(row[4]) if len(row) >= 5 and row[4].strip() else 0.0
+    if len(row) >= 4 and row.strip() == current_user:
+        b_price = float(row) if len(row) >= 5 and row.strip() else 0.0
         my_stock.append({
             "row_idx": idx,
-            "item_name": row[1].strip(),
-            "price": float(row[2]),
-            "quantity": int(float(row[3])),
+            "item_name": row.strip(),
+            "price": float(row),
+            "quantity": float(row),
             "buy_price": b_price
         })
 
-# === مین ڈیش بورڈ (ترتیب وار پروفیشنل بٹن) ===
 if st.session_state.active_page == "home":
     st.subheader("📌 مین ڈیش بورڈ — کام منتخب کریں:")
     col_a, col_b = st.columns(2)
     with col_a:
-        if st.button("🧾\n\nبلنگ اور سیلز\n(کسٹمر بل)", use_container_width=True):
+        if st.button("🧾\n\nکسٹمر بلنگ\n(مقررہ یا موقع کا ریٹ)", use_container_width=True):
             st.session_state.active_page = "billing"
             st.rerun()
         st.write("")
@@ -252,20 +251,20 @@ if st.session_state.active_page == "home":
             st.rerun()
 
     with col_b:
-        if st.button("🚚\n\nمال خریداری و سپلائر\n(خودکار اسٹاک انٹری)", use_container_width=True):
+        if st.button("🚚\n\nسپلائر خریداری بل\n(نقد + ادھار تقسیم)", use_container_width=True):
             st.session_state.active_page = "purchases"
             st.rerun()
         st.write("")
-        if st.button("📦\n\nموجودہ اسٹاک\nو قیمتیں", use_container_width=True):
+        if st.button("📦\n\nموجودہ اسٹاک\n(پرانا مال درج کریں)", use_container_width=True):
             st.session_state.active_page = "stock"
             st.rerun()
         st.write("")
-        if st.button("🆕\n\nاپ ڈیٹ تفصیل (v6.1)\nو رائے (Feedback)", use_container_width=True):
+        if st.button("🆕\n\nاپ ڈیٹ تفصیل (v6.2)\nو رائے (Feedback)", use_container_width=True):
             st.session_state.active_page = "updates_fb"
             st.rerun()
 
     st.divider()
-    _, corner_col = st.columns([2, 1])
+    _, corner_col = st.columns()
     with corner_col:
         if st.button("🚪 لاگ آؤٹ", key="bottom_logout_btn", use_container_width=True):
             st.session_state.logged_in = False
@@ -275,30 +274,35 @@ if st.session_state.active_page == "home":
             st.session_state.active_page = "home"
             st.rerun()
 
-# === صفحہ 1: بلنگ اور سیلز ===
 elif st.session_state.active_page == "billing":
     st.header("🧾 نیا کسٹمر بل بنائیں")
-    if not my_stock:
-        st.warning("آپ کا اسٹاک خالی ہے! پہلے 'مال خریداری و سپلائر' یا 'موجودہ اسٹاک' میں جا کر سامان شامل کریں۔")
+    avail_stock = [i for i in my_stock if i["quantity"] > 0]
+    if not avail_stock:
+        st.warning("آپ کا اسٹاک خالی ہے! پہلے 'سپلائر خریداری بل' یا 'موجودہ اسٹاک' میں جا کر مال شامل کریں۔")
     else:
         if "cart" not in st.session_state:
             st.session_state.cart = []
 
-        item_names = [item["item_name"] for item in my_stock]
-        selected_name = st.selectbox("سامان منتخب کریں:", item_names)
-        selected_item = next(i for i in my_stock if i["item_name"] == selected_name)
+        item_names = [item["item_name"] for item in avail_stock]
+        selected_name = st.selectbox("چیز / جنس منتخب کریں:", item_names)
+        selected_item = next(i for i in avail_stock if i["item_name"] == selected_name)
 
-        st.write(f"فی یونٹ قیمت: **{selected_item['price']} روپے** | دستیاب اسٹاک: **{selected_item['quantity']}**")
-        sell_qty = st.number_input("تعداد درج کریں:", min_value=1, max_value=max(1, selected_item['quantity']), step=1)
+        rate_info = f"{selected_item['price']} روپے" if selected_item['price'] > 0 else "موقع پر طے ہوگا"
+        st.info(f"📦 دستیاب اسٹاک: **{selected_item['quantity']}** | قیمتِ خرید: **{selected_item['buy_price']}** | مقررہ ریٹ: **{rate_info}**")
+
+        sell_qty = st.number_input("تعداد / وزن درج کریں:", min_value=0.1, max_value=float(selected_item['quantity']), value=1.0, step=1.0)
+        custom_sell_price = st.number_input("بیچنے کا ریٹ (موقع پر تبدیل بھی کر سکتے ہیں):", min_value=0.0, value=float(selected_item['price']), step=10.0)
 
         if st.button("➕ بل میں شامل کریں"):
-            if selected_item['quantity'] >= sell_qty:
-                total = selected_item['price'] * sell_qty
-                profit = (selected_item['price'] - selected_item['buy_price']) * sell_qty if selected_item['buy_price'] > 0 else 0
+            if custom_sell_price <= 0:
+                st.error("براہ کرم بیچنے کا ریٹ (0 سے زیادہ) درج کریں!")
+            elif selected_item['quantity'] >= sell_qty:
+                total = custom_sell_price * sell_qty
+                profit = (custom_sell_price - selected_item['buy_price']) * sell_qty if selected_item['buy_price'] > 0 else 0
                 st.session_state.cart.append({
                     "name": selected_name,
                     "qty": sell_qty,
-                    "price": selected_item['price'],
+                    "price": custom_sell_price,
                     "total": total,
                     "profit": profit
                 })
@@ -338,98 +342,99 @@ elif st.session_state.active_page == "billing":
                 encoded_msg = urllib.parse.quote(bill_text)
                 st.link_button("🟢 واٹس ایپ کھولیں (فہرست سے گاہک چنیں)", f"https://wa.me?text={encoded_msg}")
 
-            receipt_html = f"""
-            <script>
-            function printOnlyBill() {{
-                var printWin = window.open('', '', 'width=400,height=600');
-                printWin.document.write('<html><head><title>Print Bill</title>');
-                printWin.document.write('<style>body{{font-family:sans-serif;text-align:center;direction:rtl;}} table{{width:100%;border-collapse:collapse;margin-top:10px;}} th,td{{border-bottom:1px dashed #000;padding:5px;text-align:right;}}</style>');
-                printWin.document.write('</head><body>');
-                printWin.document.write('<h2>{shop_title}</h2><p style="font-size:12px;">تاریخ و وقت: {current_dt}</p><hr>');
-                printWin.document.write('<table><tr><th>چیز</th><th>تعداد</th><th>قیمت</th><th>کل</th></tr>{html_rows}</table>');
-                printWin.document.write('<h3>کل رقم: {grand_total} روپے</h3><hr>');
-                printWin.document.write('<p>شکریہ! دوبارہ تشریف لائیں۔</p>');
-                printWin.document.write('</body></html>');
-                printWin.document.close();
-                printWin.focus();
-                printWin.print();
-                printWin.close();
-            }}
-            </script>
-            <button onclick="printOnlyBill()" style="background-color:#2196F3;color:white;padding:10px 20px;border:none;border-radius:5px;cursor:pointer;font-size:16px;margin-top:10px;">🖨️ صرف بل پرنٹ کریں (Clean Receipt)</button>
-            """
-            st.components.v1.html(receipt_html, height=65)
-
             if st.button("🔄 نیا بل شروع کریں (پرانا صاف کریں)"):
                 st.session_state.cart = []
                 st.rerun()
-# === صفحہ 2: سپلائر سے مال خریداری و خودکار اسٹاک انٹری ===
 elif st.session_state.active_page == "purchases":
-    st.header("🚚 مال خریداری و سپلائر (Seller) کھاتہ")
-    st.write("یہاں نئے آنے والے مال کی تفصیل درج کریں—ایپ خود بخود اسٹاک بڑھا دے گی اور سپلائر کا ادھار کھاتہ بھی محفوظ رکھے گی۔")
+    st.header("🚚 سپلائر / زمیندار مجموعی خریداری بل")
+    st.write("پہلے تمام خریدی گئی اشیاء فہرست میں ڈالیں، پھر نیچے کل بل میں سے نقد اور ادھار درج کریں:")
 
     try:
         pur_ws = sheet.worksheet("Purchases")
         sup_ws = sheet.worksheet("Suppliers")
     except Exception:
-        st.error("گوگل شیٹ میں 'Purchases' اور 'Suppliers' ٹیبز موجود نہیں ہیں۔ براہ کرم پہلے یہ دونوں ٹیبز بنائیں۔")
+        st.error("گوگل شیٹ میں 'Purchases' اور 'Suppliers' ٹیبز موجود نہیں ہیں۔")
         st.stop()
 
     all_sup_rows = sup_ws.get_all_values()
     my_suppliers = []
     for idx, r in enumerate(all_sup_rows[1:], start=2):
-        if len(r) >= 4 and r[0].strip() == current_user:
-            my_suppliers.append({
-                "row_idx": idx,
-                "name": r[1].strip(),
-                "phone": r[2].strip(),
-                "payable": float(r[3])
-            })
+        if len(r) >= 4 and r.strip() == current_user:
+            my_suppliers.append({"row_idx": idx, "name": r.strip(), "phone": r.strip(), "payable": float(r)})
 
-    ptab1, ptab2, ptab3 = st.tabs(["📥 نیا مال خریدیں (اسٹاک انٹری)", "🏢 سپلائرز کا بقایا کھاتہ", "📜 خریداری کی مکمل تاریخ"])
+    if "pur_cart" not in st.session_state:
+        st.session_state.pur_cart = []
+
+    ptab1, ptab2, ptab3 = st.tabs(["📥 مجموعی خریداری بل بنائیں", "🏢 سپلائرز کا بقایا کھاتہ", "📜 خریداری ریکارڈ"])
 
     with ptab1:
-        with st.form("purchase_entry_form"):
-            sup_name = st.text_input("سپلائر / ہول سیلر کا نام (لازمی):")
-            sup_phone = st.text_input("سپلائر کا فون نمبر (اختیاری):")
-            p_item = st.text_input("خریدی گئی چیز کا نام (لازمی):")
-            p_qty = st.number_input("تعداد / مقدار:", min_value=1, step=1)
-            p_buy = st.number_input("فی یونٹ قیمتِ خرید (روپے):", min_value=1.0, step=10.0)
-            p_sell = st.number_input("فی یونٹ قیمتِ فروخت (روپے):", min_value=1.0, step=10.0)
-            pay_mode = st.radio("ادائیگی کی صورت:", ["نقد ادا کر دی (Paid)", "ادھار پر مال لیا (Credit - دینی باقی)"])
-
-            if st.form_submit_button("✅ خریداری محفوظ کریں و اسٹاک بڑھائیں"):
-                if sup_name.strip() and p_item.strip():
-                    now_pk = datetime.now(PK_TIME).strftime("%d-%m-%Y %I:%M %p")
-                    total_bill_cost = p_qty * p_buy
-
-                    # 1. خودکار اسٹاک اپ ڈیٹ
-                    existing = next((i for i in my_stock if i["item_name"].lower() == p_item.strip().lower()), None)
-                    if existing:
-                        new_q = existing["quantity"] + p_qty
-                        stock_ws.update_cell(existing["row_idx"], 3, p_sell)
-                        stock_ws.update_cell(existing["row_idx"], 4, new_q)
-                        stock_ws.update_cell(existing["row_idx"], 5, p_buy)
-                    else:
-                        stock_ws.append_row([current_user, p_item.strip(), p_sell, p_qty, p_buy])
-
-                    # 2. سپلائر کھاتہ اپ ڈیٹ (اگر ادھار پر لیا ہو)
-                    ex_sup = next((s for s in my_suppliers if s["name"].lower() == sup_name.strip().lower()), None)
-                    add_debt = total_bill_cost if "ادھار" in pay_mode else 0.0
-                    if ex_sup:
-                        sup_ws.update_cell(ex_sup["row_idx"], 4, ex_sup["payable"] + add_debt)
-                    else:
-                        sup_ws.append_row([current_user, sup_name.strip(), sup_phone.strip(), add_debt])
-
-                    # 3. خریداری ریکارڈ میں اندراج
-                    pur_ws.append_row([
-                        current_user, sup_name.strip(), p_item.strip(),
-                        p_qty, p_buy, p_sell, pay_mode, now_pk
-                    ])
-                    st.success(f"🎉 '{p_item}' کی {p_qty} تعداد خودکار طریقے سے اسٹاک میں شامل ہو گئی!")
+        with st.form("add_pur_item_form"):
+            p_item = st.text_input("چیز / جنس کا نام (لازمی):")
+            p_qty = st.number_input("تعداد / وزن:", min_value=0.1, value=1.0, step=1.0)
+            p_buy = st.number_input("فی یونٹ قیمتِ خرید (لازمی):", min_value=1.0, step=10.0)
+            p_sell = st.number_input("فی یونٹ قیمتِ فروخت (اختیاری - آڑھت کے لیے 0 رہنے دیں):", min_value=0.0, value=0.0, step=10.0)
+            if st.form_submit_button("➕ خریداری فہرست میں ڈالیں"):
+                if p_item.strip():
+                    st.session_state.pur_cart.append({
+                        "item": p_item.strip(),
+                        "qty": p_qty,
+                        "buy": p_buy,
+                        "sell": p_sell,
+                        "total": p_qty * p_buy
+                    })
+                    st.success(f"'{p_item}' فہرست میں شامل ہو گیا!")
                     st.rerun()
                 else:
-                    st.error("سپلائر کا نام اور چیز کا نام لازمی لکھیں۔")
+                    st.error("چیز کا نام لکھیں۔")
+
+        if st.session_state.pur_cart:
+            st.divider()
+            st.subheader("📋 زیرِ تیاری خریداری بل")
+            st.table([{"چیز": x["item"], "مقدار": x["qty"], "ریٹ خرید": x["buy"], "کل": x["total"]} for x in st.session_state.pur_cart])
+            grand_pur = sum(x["total"] for x in st.session_state.pur_cart)
+            st.info(f"💰 **مجموعی خریداری بل: {grand_pur:,.0f} روپے**")
+
+            with st.form("finalize_pur_form"):
+                sup_name = st.text_input("سپلائر / زمیندار کا نام (لازمی):")
+                sup_phone = st.text_input("سپلائر کا فون نمبر (اختیاری):")
+                paid_cash = st.number_input("اس بل میں سے کتنے نقد ادا کیے؟ (باقی خودکار ادھار ہو جائے گا):", min_value=0.0, max_value=float(grand_pur), value=0.0, step=100.0)
+                if st.form_submit_button("✅ بل مکمل کریں (اسٹاک و کھاتہ اپ ڈیٹ)"):
+                    if sup_name.strip():
+                        now_pk = datetime.now(PK_TIME).strftime("%d-%m-%Y %I:%M %p")
+                        rem_debt = max(0.0, grand_pur - paid_cash)
+
+                        for x in st.session_state.pur_cart:
+                            ex = next((i for i in my_stock if i["item_name"].lower() == x["item"].lower()), None)
+                            if ex:
+                                new_q = ex["quantity"] + x["qty"]
+                                new_s = x["sell"] if x["sell"] > 0 else ex["price"]
+                                stock_ws.update_cell(ex["row_idx"], 3, new_s)
+                                stock_ws.update_cell(ex["row_idx"], 4, new_q)
+                                stock_ws.update_cell(ex["row_idx"], 5, x["buy"])
+                            else:
+                                stock_ws.append_row([current_user, x["item"], x["sell"], x["qty"], x["buy"]])
+
+                            pur_ws.append_row([
+                                current_user, sup_name.strip(), x["item"], x["qty"],
+                                x["buy"], x["sell"], f"کل بل: {grand_pur} | نقد: {paid_cash}", now_pk
+                            ])
+
+                        if rem_debt > 0:
+                            ex_sup = next((s for s in my_suppliers if s["name"].lower() == sup_name.strip().lower()), None)
+                            if ex_sup:
+                                sup_ws.update_cell(ex_sup["row_idx"], 4, ex_sup["payable"] + rem_debt)
+                            else:
+                                sup_ws.append_row([current_user, sup_name.strip(), sup_phone.strip(), rem_debt])
+
+                        st.session_state.pur_cart = []
+                        st.success(f"🎉 بل مکمل! نقد ادا: {paid_cash} روپے | سپلائر کے کھاتے میں ادھار: {rem_debt} روپے")
+                        st.rerun()
+                    else:
+                        st.error("سپلائر کا نام لکھنا لازمی ہے۔")
+
+            if st.button("❌ فہرست صاف کریں"):
+                st.session_state.pur_cart = []
+                st.rerun()
 
     with ptab2:
         if not my_suppliers:
@@ -437,9 +442,8 @@ elif st.session_state.active_page == "purchases":
         else:
             tot_payable = sum(s["payable"] for s in my_suppliers)
             st.metric("سپلائرز کو کل دینی باقی رقم", f"{tot_payable:,.0f} روپے")
-            st.table([{"سپلائر کا نام": s["name"], "فون": s["phone"], "دینی باقی رقم": f"{s['payable']:,.0f} روپے"} for s in my_suppliers])
+            st.table([{"سپلائر": s["name"], "فون": s["phone"], "دینی باقی": f"{s['payable']:,.0f} روپے"} for s in my_suppliers])
 
-            st.subheader("💸 سپلائر کو ادائیگی درج کریں")
             with st.form("pay_sup_form"):
                 sel_s_name = st.selectbox("سپلائر منتخب کریں:", [s["name"] for s in my_suppliers])
                 sel_s = next(s for s in my_suppliers if s["name"] == sel_s_name)
@@ -452,79 +456,82 @@ elif st.session_state.active_page == "purchases":
 
     with ptab3:
         all_p_rows = pur_ws.get_all_values()
-        my_p_list = [r for r in all_p_rows[1:] if len(r) >= 8 and r[0].strip() == current_user]
+        my_p_list = [r for r in all_p_rows[1:] if len(r) >= 8 and r.strip() == current_user]
         if my_p_list:
-            st.table([
-                {"تاریخ": r[7], "سپلائر": r[1], "چیز": r[2], "مقدار": r[3], "خرید": r[4], "فروخت": r[5], "حالت": r[6]}
-                for r in my_p_list
-            ])
+            st.table([{"تاریخ": r, "سپلائر": r, "چیز": r, "مقدار": r, "خرید": r, "تفصیل": r} for r in my_p_list])
         else:
             st.info("ابھی کوئی خریداری درج نہیں ہوئی۔")
 
-# === صفحہ 3: موجودہ اسٹاک ===
 elif st.session_state.active_page == "stock":
-    st.header("📦 موجودہ اسٹاک و قیمتیں")
+    st.header("📦 موجودہ اسٹاک (پہلے سے موجود مال درج کریں)")
+    with st.form("direct_stock_form"):
+        st_name = st.text_input("چیز / جنس کا نام (لازمی):")
+        st_qty = st.number_input("موجودہ تعداد / وزن:", min_value=0.1, value=1.0, step=1.0)
+        st_buy = st.number_input("فی یونٹ قیمتِ خرید (لازمی):", min_value=1.0, step=10.0)
+        st_sell = st.number_input("فی یونٹ قیمتِ فروخت (اختیاری - آڑھت کے لیے 0 رہنے دیں):", min_value=0.0, value=0.0, step=10.0)
+        if st.form_submit_button("💾 اسٹاک میں شامل کریں"):
+            if st_name.strip():
+                ex = next((i for i in my_stock if i["item_name"].lower() == st_name.strip().lower()), None)
+                if ex:
+                    stock_ws.update_cell(ex["row_idx"], 3, st_sell if st_sell > 0 else ex["price"])
+                    stock_ws.update_cell(ex["row_idx"], 4, ex["quantity"] + st_qty)
+                    stock_ws.update_cell(ex["row_idx"], 5, st_buy)
+                else:
+                    stock_ws.append_row([current_user, st_name.strip(), st_sell, st_qty, st_buy])
+                st.success(f"'{st_name}' اسٹاک میں محفوظ ہو گیا!")
+                st.rerun()
+            else:
+                st.error("چیز کا نام لکھیں۔")
+
+    st.divider()
     if my_stock:
-        display_stock = [
+        st.table([
             {
-                "پروڈکٹ": i["item_name"],
+                "چیز / جنس": i["item_name"],
                 "قیمتِ خرید": i["buy_price"],
-                "قیمتِ فروخت": i["price"],
-                "متوقع منافع/یونٹ": i["price"] - i["buy_price"] if i["buy_price"] > 0 else 0,
+                "قیمتِ فروخت": i["price"] if i["price"] > 0 else "موقع پر طے",
                 "بقایا مقدار": i["quantity"]
             }
             for i in my_stock
-        ]
-        st.table(display_stock)
+        ])
     else:
-        st.info("ابھی کوئی اسٹاک درج نہیں ہے۔ 'مال خریداری و سپلائر' میں جا کر نیا اسٹاک درج کریں۔")
-
-# === صفحہ 4: نفع و نقصان اور مکمل کاروباری خلاصہ ===
+        st.info("ابھی کوئی اسٹاک درج نہیں ہے۔")
 elif st.session_state.active_page == "pnl":
     st.header("📈 نفع و نقصان اور مکمل کاروباری حساب")
-
-    # 1. کسٹمرز سے لینی باقی رقم
     all_k = khata_ws.get_all_values()
-    cust_receivable = sum(float(r[3]) for r in all_k[1:] if len(r) >= 4 and r[0].strip() == current_user)
+    cust_receivable = sum(float(r) for r in all_k[1:] if len(r) >= 4 and r.strip() == current_user)
 
-    # 2. سپلائرز کو دینی باقی رقم
     try:
         sup_ws = sheet.worksheet("Suppliers")
         all_s = sup_ws.get_all_values()
-        sup_payable = sum(float(r[3]) for r in all_s[1:] if len(r) >= 4 and r[0].strip() == current_user)
+        sup_payable = sum(float(r) for r in all_s[1:] if len(r) >= 4 and r.strip() == current_user)
     except Exception:
         sup_payable = 0.0
 
-    # 3. موجودہ اسٹاک کی مالیت اور متوقع منافع
     stock_cost_val = sum(i["buy_price"] * i["quantity"] for i in my_stock)
-    stock_sell_val = sum(i["price"] * i["quantity"] for i in my_stock)
-    expected_profit = sum((i["price"] - i["buy_price"]) * i["quantity"] for i in my_stock if i["buy_price"] > 0)
+    stock_sell_val = sum((i["price"] if i["price"] > 0 else i["buy_price"]) * i["quantity"] for i in my_stock)
+    expected_profit = sum((i["price"] - i["buy_price"]) * i["quantity"] for i in my_stock if i["price"] > 0 and i["buy_price"] > 0)
 
     c1, c2 = st.columns(2)
-    c1.metric("💰 گاہکوں سے لینی باقی (Receivable)", f"{cust_receivable:,.0f} روپے")
-    c2.metric("💸 سپلائرز کو دینی باقی (Payable)", f"{sup_payable:,.0f} روپے")
+    c1.metric("💰 گاہکوں سے لینی باقی", f"{cust_receivable:,.0f} روپے")
+    c2.metric("💸 سپلائرز کو دینی باقی", f"{sup_payable:,.0f} روپے")
 
     st.divider()
     c3, c4 = st.columns(2)
-    c3.metric("📦 موجودہ اسٹاک کی کل مالیت (خرید)", f"{stock_cost_val:,.0f} روپے")
-    c4.metric("✨ موجودہ اسٹاک پر متوقع منافع", f"{expected_profit:,.0f} روپے")
+    c3.metric("📦 موجودہ اسٹاک مالیت (خرید)", f"{stock_cost_val:,.0f} روپے")
+    c4.metric("✨ مقررہ اسٹاک پر متوقع منافع", f"{expected_profit:,.0f} روپے")
 
     st.divider()
     net_position = (cust_receivable + stock_sell_val) - sup_payable
-    st.success(f"🏦 **مجموعی کاروباری پوزیشن (اسٹاک + وصولی منفی ادائیگی):** `{net_position:,.0f} روپے`")
-# === صفحہ 5: کسٹمر ادھار کھاتہ ===
+    st.success(f"🏦 **مجموعی کاروباری پوزیشن:** `{net_position:,.0f} روپے`")
+
 elif st.session_state.active_page == "khata":
     st.header("📒 کسٹمر ادھار کھاتہ سسٹم")
     all_khata_rows = khata_ws.get_all_values()
     my_khata = []
     for idx, row in enumerate(all_khata_rows[1:], start=2):
-        if len(row) >= 4 and row[0].strip() == current_user:
-            my_khata.append({
-                "row_idx": idx,
-                "customer_name": row[1].strip(),
-                "phone": row[2].strip(),
-                "balance": float(row[3])
-            })
+        if len(row) >= 4 and row.strip() == current_user:
+            my_khata.append({"row_idx": idx, "customer_name": row.strip(), "phone": row.strip(), "balance": float(row)})
 
     try:
         hist_ws = sheet.worksheet("Khata_History")
@@ -533,128 +540,84 @@ elif st.session_state.active_page == "khata":
         hist_ws = None
         all_hist_rows = []
 
-    tab1, tab2, tab3 = st.tabs([
-        "🔄 ادھار / وصولی (فہرست سے چنیں)",
-        "➕ نیا گاہک رجسٹر کریں",
-        "📜 گاہک کا مکمل کھاتہ اور بقایا"
-    ])
+    tab1, tab2, tab3 = st.tabs(["🔄 ادھار / وصولی", "➕ نیا گاہک رجسٹر کریں", "📜 مکمل کھاتہ"])
 
     with tab1:
         if not my_khata:
-            st.info("ابھی کوئی گاہک رجسٹرڈ نہیں ہے۔ پہلے 'نیا گاہک رجسٹر کریں' میں جا کر گاہک کا نام اور نمبر شامل کریں۔")
+            st.info("پہلے 'نیا گاہک رجسٹر کریں' میں جا کر گاہک کا نام شامل کریں۔")
         else:
             cust_names = [k["customer_name"] for k in my_khata]
-            selected_c_name = st.selectbox("گاہک منتخب کریں (کلک کریں):", cust_names)
+            selected_c_name = st.selectbox("گاہک منتخب کریں:", cust_names)
             selected_cust = next(k for k in my_khata if k["customer_name"] == selected_c_name)
-
-            st.info(f"👤 گاہک: **{selected_cust['customer_name']}** | 📞 فون: **{selected_cust['phone']}** | 💰 موجودہ بقایا: **{selected_cust['balance']} روپے**")
+            st.info(f"👤 **{selected_cust['customer_name']}** | 📞 **{selected_cust['phone']}** | 💰 بقایا: **{selected_cust['balance']} روپے**")
 
             with st.form("existing_khata_form"):
                 trans_type = st.radio("عمل منتخب کریں:", ["مزید ادھار دیں (+)", "رقم وصول کریں (-)"])
                 trans_amount = st.number_input("رقم درج کریں (روپے):", min_value=1.0, step=100.0)
                 if st.form_submit_button("💾 کھاتہ اپ ڈیٹ کریں"):
                     old_bal = selected_cust["balance"]
-                    if trans_type == "مزید ادھار دیں (+)":
-                        new_bal = old_bal + trans_amount
-                        log_type = "ادھار لیا (+)"
-                    else:
-                        new_bal = max(0.0, old_bal - trans_amount)
-                        log_type = "رقم جمع کروائی (-)"
-
+                    new_bal = old_bal + trans_amount if "دیں" in trans_type else max(0.0, old_bal - trans_amount)
+                    log_type = "ادھار لیا (+)" if "دیں" in trans_type else "رقم جمع کروائی (-)"
                     khata_ws.update_cell(selected_cust["row_idx"], 4, new_bal)
                     if hist_ws:
                         now_dt = datetime.now(PK_TIME).strftime("%d-%m-%Y %I:%M %p")
                         hist_ws.append_row([current_user, selected_c_name, log_type, trans_amount, now_dt])
-                    st.success(f"کامیابی! {selected_c_name} کا نیا بقایا {new_bal} روپے ہو گیا ہے۔")
+                    st.success(f"نیا بقایا {new_bal} روپے ہو گیا ہے۔")
                     st.rerun()
 
     with tab2:
         with st.form("new_cust_form"):
             new_c_name = st.text_input("نئے گاہک کا نام (لازمی):")
-            new_c_phone = st.text_input("واٹس ایپ فون نمبر (لازمی، مثلاً 03001234567):")
-            first_udhar = st.number_input("ابتدائی ادھار رقم (اگر کوئی ہے):", min_value=0.0, step=100.0)
+            new_c_phone = st.text_input("واٹس ایپ فون نمبر (لازمی):")
+            first_udhar = st.number_input("ابتدائی ادھار رقم:", min_value=0.0, step=100.0)
             if st.form_submit_button("✅ نیا گاہک محفوظ کریں"):
                 if new_c_name.strip() and new_c_phone.strip():
                     if any(k["customer_name"].lower() == new_c_name.strip().lower() for k in my_khata):
-                        st.error("یہ نام پہلے سے فہرست میں موجود ہے!")
+                        st.error("یہ نام پہلے سے موجود ہے!")
                     else:
                         khata_ws.append_row([current_user, new_c_name.strip(), new_c_phone.strip(), first_udhar])
                         if hist_ws and first_udhar > 0:
                             now_dt = datetime.now(PK_TIME).strftime("%d-%m-%Y %I:%M %p")
                             hist_ws.append_row([current_user, new_c_name.strip(), "ادھار لیا (+)", first_udhar, now_dt])
-                        st.success(f"گاہک '{new_c_name}' کامیابی سے رجسٹر ہو گیا!")
+                        st.success("گاہک رجسٹر ہو گیا!")
                         st.rerun()
                 else:
-                    st.error("گاہک کا نام اور فون نمبر دونوں درج کرنا لازمی ہیں۔")
+                    st.error("نام اور فون نمبر لازمی ہیں۔")
 
     with tab3:
-        if not my_khata:
-            st.info("کوئی کھاتہ موجود نہیں ہے۔")
-        else:
-            total_market_udhar = sum(k["balance"] for k in my_khata)
-            st.metric("گاہکوں سے کل لینی باقی رقم", f"{total_market_udhar:,.0f} روپے")
-            st.divider()
-
-            view_cust_name = st.selectbox("تفصیلی کھاتہ دیکھنے کے لیے گاہک منتخب کریں:", [k["customer_name"] for k in my_khata], key="view_ledger")
+        if my_khata:
+            st.metric("کل لینی باقی رقم", f"{sum(k['balance'] for k in my_khata):,.0f} روپے")
+            view_cust_name = st.selectbox("کھاتہ دیکھنے کے لیے گاہک چنیں:", [k["customer_name"] for k in my_khata], key="view_ledger")
             v_cust = next(k for k in my_khata if k["customer_name"] == view_cust_name)
-
             cust_history = []
-            total_taken = 0.0
-            total_paid = 0.0
             for r in all_hist_rows[1:]:
-                if len(r) >= 5 and r[0].strip() == current_user and r[1].strip() == view_cust_name:
-                    amt = float(r[3])
-                    t_type = r[2].strip()
-                    if "+" in t_type:
-                        total_taken += amt
-                    else:
-                        total_paid += amt
-                    cust_history.append({"تاریخ و وقت": r[4], "تفصیل": t_type, "رقم (روپے)": amt})
-
-            c1, c2, c3 = st.columns(3)
-            c1.metric("کل ادھار لیا", f"{total_taken:,.0f} روپے")
-            c2.metric("کل جمع کروایا", f"{total_paid:,.0f} روپے")
-            c3.metric("موجودہ بقایا", f"{v_cust['balance']:,.0f} روپے")
-
+                if len(r) >= 5 and r.strip() == current_user and r.strip() == view_cust_name:
+                    cust_history.append({"تاریخ و وقت": r, "تفصیل": r, "رقم": float(r)})
             if cust_history:
                 st.table(cust_history)
-
             clean_p = str(v_cust['phone']).strip().replace("-", "").replace(" ", "")
             if clean_p.startswith("03"):
                 clean_p = "92" + clean_p[1:]
+            ledger_msg = f"السلام علیکم {v_cust['customer_name']} صاحب، *{shop_title}* کے ذمہ آپ کا بقایا ادھار *{v_cust['balance']} روپے* ہے۔ شکریہ!"
+            st.link_button("📲 گاہک کو کھاتہ واٹس ایپ کریں", f"https://wa.me{clean_p}?text={urllib.parse.quote(ledger_msg)}")
 
-            ledger_msg = (
-                f"السلام علیکم {v_cust['customer_name']} صاحب،\n"
-                f"*{shop_title}* کی طرف سے آپ کے کھاتے کی تفصیل:\n"
-                f"• کل ادھار: {total_taken} روپے\n"
-                f"• کل جمع شدہ: {total_paid} روپے\n"
-                f"• *موجودہ بقایا رقم: {v_cust['balance']} روپے*\n"
-                f"براہ کرم جلد ادائیگی کر دیں۔ شکریہ!"
-            )
-            st.link_button("📲 گاہک کو مکمل کھاتہ واٹس ایپ کریں", f"https://wa.me{clean_p}?text={urllib.parse.quote(ledger_msg)}")
-
-# === صفحہ 6: اپ ڈیٹ لاگ (v6.0) و فیڈبیک ===
 elif st.session_state.active_page == "updates_fb":
-    st.header("🆕 ورژن 6.1 اپ ڈیٹ لاگ و صارف کی رائے")
+    st.header("🆕 ورژن 6.2 اپ ڈیٹ لاگ و صارف کی رائے")
     st.info("""
-    **اس نئے ورژن (v6.0) میں یہ پروفیشنل سہولیات شامل کی گئی ہیں:**
-    1. **سپلائر (Seller) و خریداری کھاتہ:** اب آپ جس ہول سیلر سے مال خریدیں گے اس کا ریکارڈ اور ادھار کھاتہ الگ محفوظ ہوگا، اور سامان خودکار طریقے سے اسٹاک میں شامل ہو جائے گا۔
-    2. **نفع و نقصان (Profit & Loss) رپورٹ:** اب آپ ایک کلک پر دیکھ سکتے ہیں کہ کس چیز کی قیمتِ خرید و فروخت کیا ہے، گاہکوں سے کل کتنی رقم لینی ہے اور سپلائرز کو کتنی دینی ہے۔
-    3. **3 دن اکاؤنٹ سیکیورٹی پالیسی:** 3 دن تک غیر فعال رہنے والا اکاؤنٹ عارضی معطل ہو جاتا ہے اور صرف اسی صارف کو فوری بحالی کا بٹن دکھائی دیتا ہے۔
+    **اس نئے ورژن (v6.2) میں یہ جدید سہولیات شامل کی گئی ہیں:**
+    1. **پہلے سے موجود اسٹاک کا اندراج:** اب آپ پرانا اسٹاک براہِ راست درج کر سکتے ہیں۔
+    2. **سپلائر مجموعی بل (نقد + ادھار تقسیم):** اب پہلے متعدد اشیاء کا مجموعی بل بنتا ہے، اور پھر اس میں سے نقد رقم منہا ہو کر باقی خودکار طریقے سے سپلائر کے کھاتے میں درج ہو جاتی ہے۔
+    3. **متغیر قیمتِ فروخت (آڑھت / منڈی سہولت):** اب مال خریدتے وقت قیمتِ فروخت خالی چھوڑی جا سکتی ہے اور کسٹمر بل بناتے وقت موقع کے ریٹ پر بل بنایا جا سکتا ہے۔
     """)
-
     st.divider()
-    st.subheader("💬 ان نئے فیچرز پر اپنی رائے یا مزید تجویز بھیجیں")
     with st.form("feedback_form"):
-        fb_msg = st.text_area("اپنا پیغام یا مشورہ یہاں لکھیں:")
+        fb_msg = st.text_area("ان نئے فیچرز پر اپنی رائے یا تجویز لکھیں:")
         if st.form_submit_button("📩 ایڈمن کو پیغام بھیجیں"):
             if fb_msg.strip():
                 try:
                     fb_ws = sheet.worksheet("Feedback")
                     now_str = datetime.now(PK_TIME).strftime("%d-%m-%Y %I:%M %p")
                     fb_ws.append_row([current_user, shop_title, fb_msg.strip(), now_str])
-                    st.success("شکریہ! آپ کی رائے ایڈمن تک پہنچ گئی ہے، جلد ہی اس پر عمل کیا جائے گا۔")
+                    st.success("شکریہ! آپ کی رائے ایڈمن تک پہنچ گئی ہے۔")
                 except Exception:
-                    st.error("فیڈبیک بھیجنے میں مسئلہ آیا۔ یقین کر لیں کہ گوگل شیٹ میں Feedback ٹیب موجود ہے۔")
-            else:
-                st.warning("براہ کرم خالی پیغام نہ بھیجیں۔")
+                    st.error("فیڈبیک بھیجنے میں مسئلہ آیا۔")
