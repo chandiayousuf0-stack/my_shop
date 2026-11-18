@@ -264,7 +264,7 @@ if st.session_state.active_page == "home":
             st.rerun()
 
     st.divider()
-    _, corner_col = st.columns()
+    _, corner_col = st.columns(2)
     with corner_col:
         if st.button("🚪 لاگ آؤٹ", key="bottom_logout_btn", use_container_width=True):
             st.session_state.logged_in = False
