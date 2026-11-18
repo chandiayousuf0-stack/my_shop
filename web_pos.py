@@ -63,7 +63,7 @@ if "logged_in" not in st.session_state:
 # --- 1. لاگ ان اسکرین ---
 if not st.session_state.logged_in:
     st.title("🔐 اسمارٹ کاروبار و دکان مینجمنٹ سسٹم")
-    st.caption("ورژن 6.3 | مکمل سیلز، اسٹاک، سپلائر کھاتہ و نفع نقصان")
+    st.caption("ورژن 6.4 | مکمل سیلز، اسٹاک، سپلائر کھاتہ و نفع نقصان")
 
     with st.form("login_form"):
         u_name = st.text_input("یوزر نیم (Username)").strip()
@@ -151,7 +151,7 @@ if not st.session_state.logged_in:
             * 📈 **خالص نفع و نقصان رپورٹ**
             """)
     with col_info2:
-        with st.expander("🆕 ورژن 6.3 میں نیا کیا ہے؟"):
+        with st.expander("🆕 ورژن 6.4 میں نیا کیا ہے؟"):
             st.markdown("""
             * **سپلائر لین دین:** مال خریدنے پر خودکار اسٹاک انٹری اور سپلائر کا ادھار حساب۔
             * **نفع و نقصان رپورٹ:** خرید و فروخت کا موازنہ اور بقایا لین دین۔
@@ -207,7 +207,7 @@ current_user = st.session_state.username
 shop_title = st.session_state.shop_name
 
 st.title(f"🛒 {shop_title}")
-st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 6.3 (دکان و آڑھت ERP سسٹم)")
+st.caption(f"لاگ ان آئی ڈی: {current_user} | ورژن 6.4 (دکان و آڑھت ERP سسٹم)")
 
 if "active_page" not in st.session_state:
     st.session_state.active_page = "home"
@@ -341,6 +341,58 @@ elif st.session_state.active_page == "billing":
             else:
                 encoded_msg = urllib.parse.quote(bill_text)
                 st.link_button("🟢 واٹس ایپ کھولیں (فہرست سے گاہک چنیں)", f"https://wa.me?text={encoded_msg}")
+
+            st.divider()
+            st.subheader("💳 بل کی ادائیگی کی صورت منتخب کریں")
+            bill_pay_mode = st.radio("ادائیگی کی قسم:", ["1️⃣ مکمل نقد بل (Full Cash)", "2️⃣ ادھار / جزوی نقد بل (کھاتے میں درج کریں)"], key="online_bill_mode")
+
+            if "2️⃣" in bill_pay_mode:
+                all_k_rows = khata_ws.get_all_values()
+                my_k_list = []
+                for k_idx, k_r in enumerate(all_k_rows[1:], start=2):
+                    if len(k_r) >= 4 and k_r[0].strip() == current_user:
+                        my_k_list.append({"row_idx": k_idx, "name": k_r[1].strip(), "phone": k_r[2].strip(), "balance": float(k_r[3])})
+
+                cust_choice = st.radio("گاہک کی قسم:", ["پہلے سے رجسٹرڈ گاہک چنیں", "نیا گاہک درج کریں"], horizontal=True)
+                sel_k_cust = None
+                new_k_name = ""
+                new_k_phone = ""
+
+                if cust_choice == "پہلے سے رجسٹرڈ گاہک چنیں":
+                    if my_k_list:
+                        c_pick = st.selectbox("گاہک منتخب کریں:", [f"{x['name']} (بقایا: {x['balance']})" for x in my_k_list])
+                        sel_k_cust = next(x for x in my_k_list if f"{x['name']} (بقایا: {x['balance']})" == c_pick)
+                    else:
+                        st.warning("ابھی کوئی پرانا گاہک رجسٹرڈ نہیں، اوپر 'نیا گاہک درج کریں' منتخب کریں۔")
+                else:
+                    new_k_name = st.text_input("نئے گاہک کا پورا نام (لازمی):")
+                    new_k_phone = st.text_input("واٹس ایپ فون نمبر (مثلاً 03001234567):")
+
+                cash_rec_now = st.number_input("اس بل میں سے کتنے نقد وصول ہوئے؟ (مکمل ادھار ہو تو 0 رہنے دیں):", min_value=0.0, max_value=float(grand_total), value=0.0, step=100.0)
+                udhar_now = float(grand_total) - float(cash_rec_now)
+                st.info(f"📊 **خلاصہ:** کل بل: `{grand_total}` | نقد وصول: `{cash_rec_now}` | **نیا ادھار: `{udhar_now}` روپے**")
+
+                if st.button("💾 ادھار کھاتہ و مکمل اشیاء کی تفصیل محفوظ کریں"):
+                    items_desc = ", ".join([f"{it['name']} ({it['qty']}x{it['price']})" for it in st.session_state.cart])
+                    full_hist_note = f"بل اشیاء: {items_desc} | کل: {grand_total} | نقد: {cash_rec_now} | ادھار: {udhar_now}"
+                    try:
+                        hist_ws = sheet.worksheet("Khata_History")
+                    except Exception:
+                        hist_ws = None
+
+                    if cust_choice == "پہلے سے رجسٹرڈ گاہک چنیں" and sel_k_cust:
+                        updated_b = sel_k_cust['balance'] + udhar_now
+                        khata_ws.update_cell(sel_k_cust['row_idx'], 4, updated_b)
+                        if hist_ws:
+                            hist_ws.append_row([current_user, sel_k_cust['name'], full_hist_note, udhar_now, current_dt])
+                        st.success(f"✅ '{sel_k_cust['name']}' کے کھاتے میں {udhar_now} روپے ادھار مع اشیاء کی تفصیل محفوظ ہو گئے! کل بقایا: {updated_b} روپے")
+                    elif cust_choice == "نیا گاہک درج کریں" and new_k_name.strip():
+                        khata_ws.append_row([current_user, new_k_name.strip(), new_k_phone.strip(), udhar_now])
+                        if hist_ws:
+                            hist_ws.append_row([current_user, new_k_name.strip(), full_hist_note, udhar_now, current_dt])
+                        st.success(f"✅ نیا گاہک '{new_k_name}' رجسٹر ہو گیا اور {udhar_now} روپے ادھار مع مکمل تفصیل درج ہو گئے!")
+                    else:
+                        st.error("براہ کرم گاہک منتخب کریں یا نئے گاہک کا نام لکھیں۔")
 
             if st.button("🔄 نیا بل شروع کریں (پرانا صاف کریں)"):
                 st.session_state.cart = []
@@ -602,7 +654,7 @@ elif st.session_state.active_page == "khata":
             st.link_button("📲 گاہک کو کھاتہ واٹس ایپ کریں", f"https://wa.me{clean_p}?text={urllib.parse.quote(ledger_msg)}")
 
 elif st.session_state.active_page == "updates_fb":
-    st.header("🆕 ورژن 6.3 اپ ڈیٹ لاگ و صارف کی رائے")
+    st.header("🆕 ورژن 6.4 اپ ڈیٹ لاگ و صارف کی رائے")
     st.info("""
     **اس نئے ورژن (v6.2) میں یہ جدید سہولیات شامل کی گئی ہیں:**
     1. **پہلے سے موجود اسٹاک کا اندراج:** اب آپ پرانا اسٹاک براہِ راست درج کر سکتے ہیں۔
